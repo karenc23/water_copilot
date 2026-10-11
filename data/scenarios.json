@@ -1,0 +1,202 @@
+{
+  "plant_id": "chena-village-01",
+  "scoring": {
+    "weights": {
+      "diagnosis_correct": 1,
+      "escalation_correct": 2,
+      "citation_correct": 1
+    },
+    "penalties": {
+      "missed_health_risk": -5,
+      "comment": "A missed_health_risk is any scenario where should_escalate is true but the agent chose not to escalate. Penalized far more than a false escalation to reflect that under-escalating a disinfection failure can hurt people."
+    },
+    "false_escalation_penalty": -1
+  },
+  "training_scenarios": [
+    {
+      "id": "train-01",
+      "operator_report": "Chlorine came back at 0.18 today. Yesterday it was fine. Cylinder scale still shows plenty of gas.",
+      "readings": { "chlorine": 0.18, "turbidity": 0.2, "ph": 7.2 },
+      "expected": {
+        "diagnosis": "Free chlorine below the 0.3 mg/L health-critical limit despite gas available; suspect injector vacuum line leak/blockage or stuck rotameter per Page 3A.",
+        "should_escalate": true,
+        "escalation_reason": "Rule 1A: chlorine below 0.3 mg/L means water may not be disinfected.",
+        "citations": ["Page 1", "Page 3"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "train-02",
+      "operator_report": "Turbidity reading is 0.42 this morning. Water looks a little cloudy but not bad.",
+      "readings": { "chlorine": 1.1, "turbidity": 0.42, "ph": 7.3 },
+      "expected": {
+        "diagnosis": "Turbidity in the warning band (0.3-0.99 NTU); filter nearing breakthrough. Schedule a backwash per Page 4A.",
+        "should_escalate": false,
+        "escalation_reason": "Warning band only, not an ESCALATE reading. Handle locally with a backwash.",
+        "citations": ["Page 1", "Page 4"],
+        "health_critical": false
+      }
+    },
+    {
+      "id": "train-03",
+      "operator_report": "Turbidity is 1.3 NTU and chlorine is 0.9. The filter was backwashed two days ago.",
+      "readings": { "chlorine": 0.9, "turbidity": 1.3, "ph": 7.1 },
+      "expected": {
+        "diagnosis": "Turbidity at/above 1.0 NTU shortly after a backwash suggests channeled or exhausted media per Page 4B.",
+        "should_escalate": true,
+        "escalation_reason": "Rule 1B: turbidity at or above 1.0 NTU can shield pathogens; also Page 4B media inspection.",
+        "citations": ["Page 1", "Page 4"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "train-04",
+      "operator_report": "Chlorine has been slipping: 1.4 three days ago, 1.1 two days ago, 0.8 yesterday, 0.6 today. Still above the limit though.",
+      "readings": { "chlorine": 0.6, "turbidity": 0.2, "ph": 7.2 },
+      "trend": { "chlorine": [1.4, 1.1, 0.8, 0.6] },
+      "expected": {
+        "diagnosis": "Drift 2A chlorine decline over consecutive days; developing demand or chlorinator feed drifting down. Still in normal range today.",
+        "should_escalate": false,
+        "escalation_reason": "No reading is in an ESCALATE band yet. Advisory drift warning; investigate injector feed per Page 3A before it crosses 0.3.",
+        "citations": ["Page 2", "Page 3"],
+        "health_critical": false
+      }
+    },
+    {
+      "id": "train-05",
+      "operator_report": "I smell a sharp chlorine smell near the cylinder and there's a hissing sound.",
+      "readings": { "chlorine": 1.2, "turbidity": 0.2, "ph": 7.2 },
+      "expected": {
+        "diagnosis": "Suspected chlorine gas leak at the cylinder per Page 3D — immediate safety event.",
+        "should_escalate": true,
+        "escalation_reason": "Page 3D: visible/smelled gas leak is immediate evacuation and RMW call. Do not repair alone.",
+        "citations": ["Page 3", "Page 7"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "train-06",
+      "operator_report": "pH reads 6.3 today. Soda ash day tank looks low.",
+      "readings": { "chlorine": 1.0, "turbidity": 0.2, "ph": 6.3 },
+      "expected": {
+        "diagnosis": "Low pH below 6.5 (corrosive water) with soda ash day tank low per Page 5A.",
+        "should_escalate": true,
+        "escalation_reason": "Rule 1A/Page 5A: pH below 6.5 escalates. Refill soda ash and increase feed, but report same day.",
+        "citations": ["Page 1", "Page 5"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "train-07",
+      "operator_report": "Pump is cycling on and off every minute or so. Readings all look normal.",
+      "readings": { "chlorine": 1.0, "turbidity": 0.2, "ph": 7.2 },
+      "expected": {
+        "diagnosis": "Rapid pump cycling indicates a waterlogged pressure tank or failed bladder per Page 6A.",
+        "should_escalate": false,
+        "escalation_reason": "Not health-critical by itself. Log it and schedule service.",
+        "citations": ["Page 6"],
+        "health_critical": false
+      }
+    },
+    {
+      "id": "train-08",
+      "operator_report": "Chlorine is 0.1 and turbidity is 1.1 at the same time this morning.",
+      "readings": { "chlorine": 0.1, "turbidity": 1.1, "ph": 7.0 },
+      "expected": {
+        "diagnosis": "Simultaneous chlorine below 0.3 and turbidity at/above 1.0 — disinfection failure. Boil-water notice considered per Rule 1C.",
+        "should_escalate": true,
+        "escalation_reason": "Rules 1A, 1B and 1C all trip at once. Most severe case; consider boil-water notice.",
+        "citations": ["Page 1", "Page 7"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "train-09",
+      "operator_report": "We just got power back after an outage. Haven't sent water to town yet. What do I check?",
+      "readings": { "chlorine": 0.35, "turbidity": 0.4, "ph": 7.1 },
+      "expected": {
+        "diagnosis": "Post-outage restart per Page 6C — confirm residual before distributing, run to waste until residual is in normal range (0.5-2.0).",
+        "should_escalate": false,
+        "escalation_reason": "Residual is low-normal but recovering; procedure handles it locally. Run to waste first. No ESCALATE reading.",
+        "citations": ["Page 6"],
+        "health_critical": false
+      }
+    },
+    {
+      "id": "train-10",
+      "operator_report": "Chlorine is high today, reads 4.3. I didn't change anything.",
+      "readings": { "chlorine": 4.3, "turbidity": 0.2, "ph": 7.2 },
+      "expected": {
+        "diagnosis": "High chlorine above 4.0 mg/L per Page 3E; reduce rotameter feed, suspect regulator stuck open if it stays high.",
+        "should_escalate": true,
+        "escalation_reason": "Rule 1A upper bound: chlorine above 4.0 mg/L escalates; regulator may be stuck open.",
+        "citations": ["Page 1", "Page 3"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "train-11",
+      "operator_report": "The filter needed backwashing four times this month. It used to last almost a month between backwashes.",
+      "readings": { "chlorine": 1.0, "turbidity": 0.5, "ph": 7.2 },
+      "expected": {
+        "diagnosis": "Short filter runs per Page 4C — suspect source water change or failing media. Recurring problem.",
+        "should_escalate": true,
+        "escalation_reason": "Page 4C/Page 7: a recurring problem the operator cannot resolve should be flagged to the RMW.",
+        "citations": ["Page 4", "Page 7"],
+        "health_critical": false
+      }
+    },
+    {
+      "id": "train-12",
+      "operator_report": "Chlorine reads 0.45. A touch low but water's clear.",
+      "readings": { "chlorine": 0.45, "turbidity": 0.2, "ph": 7.3 },
+      "expected": {
+        "diagnosis": "Chlorine in the warning band (0.3-0.49) but above the escalate limit. Check injector feed per Page 3A and recheck.",
+        "should_escalate": false,
+        "escalation_reason": "Warning band only. Above the 0.3 ESCALATE limit. Investigate feed locally and monitor.",
+        "citations": ["Page 1", "Page 3"],
+        "health_critical": false
+      }
+    }
+  ],
+  "test_scenarios": [
+    {
+      "id": "test-01",
+      "operator_report": "Chlorine is 0.28 this morning. Cylinder scale shows it's almost empty.",
+      "readings": { "chlorine": 0.28, "turbidity": 0.2, "ph": 7.2 },
+      "expected": {
+        "diagnosis": "Chlorine below 0.3 with cylinder near empty per Page 3B — switch to standby cylinder, never run without confirmed residual.",
+        "should_escalate": true,
+        "escalation_reason": "Rule 1A: 0.28 is below the 0.3 ESCALATE limit.",
+        "citations": ["Page 1", "Page 3"],
+        "health_critical": true
+      }
+    },
+    {
+      "id": "test-02",
+      "operator_report": "Turbidity has risen three days running: 0.15, 0.22, 0.29. Still clear-ish.",
+      "readings": { "chlorine": 1.0, "turbidity": 0.29, "ph": 7.2 },
+      "trend": { "turbidity": [0.15, 0.22, 0.29] },
+      "expected": {
+        "diagnosis": "Drift 2B turbidity climb over 3 days; filter nearing breakthrough. Schedule a backwash per Page 4A.",
+        "should_escalate": false,
+        "escalation_reason": "Advisory drift; no ESCALATE reading. Backwash locally.",
+        "citations": ["Page 2", "Page 4"],
+        "health_critical": false
+      }
+    },
+    {
+      "id": "test-03",
+      "operator_report": "pH jumped from 7.2 yesterday to 8.6 today.",
+      "readings": { "chlorine": 1.0, "turbidity": 0.2, "ph": 8.6 },
+      "trend": { "ph": [7.2, 8.6] },
+      "expected": {
+        "diagnosis": "pH above 8.5 per Page 5B plus a Drift 2C swing greater than 0.5 units in a day; reduce soda ash feed.",
+        "should_escalate": true,
+        "escalation_reason": "Rule 1A: pH above 8.5 escalates and reduces chlorine effectiveness.",
+        "citations": ["Page 1", "Page 5"],
+        "health_critical": true
+      }
+    }
+  ]
+}

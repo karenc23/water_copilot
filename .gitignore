@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+
+# env
+.env
+.env.local
+.env*.local
+
+# python
+optimize/__pycache__/
+optimize/.venv/
+*.pyc
+
+# misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# optimize output is generated, but we keep a committed sample
+optimize/results.local.json
