@@ -17,7 +17,11 @@ export default function DraftMessage({ packet, onClose }: { packet: EscalationPa
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const ref = useRef<HTMLElement>(null);
-  useEffect(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), []);
+  // Braces matter: scrollIntoView() returns a Promise in recent Chrome, and an effect must return
+  // nothing or a cleanup function. Returning the Promise crashed the page when the draft closed.
+  useEffect(() => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const subject = draftSubject(packet);
   const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
