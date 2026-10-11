@@ -9,7 +9,8 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "try-scenarios": "tsx scripts/try-scenarios.ts",
-    "optimize": "tsx scripts/optimize.ts"
+    "optimize": "tsx scripts/optimize.ts",
+    "optimize:agents": "tsx scripts/optimize_agents.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",
