@@ -1,0 +1,212 @@
+[
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-01",
+    "chlorine": 1.12,
+    "turbidity": 0.06,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-02",
+    "chlorine": 1.06,
+    "turbidity": 0.11,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-03",
+    "chlorine": 1.16,
+    "turbidity": 0.14,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-04",
+    "chlorine": 1.02,
+    "turbidity": 0.06,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-05",
+    "chlorine": 1.02,
+    "turbidity": 0.1,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-06",
+    "chlorine": 1.11,
+    "turbidity": 0.14,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-07",
+    "chlorine": 1.15,
+    "turbidity": 0.06,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-08",
+    "chlorine": 1.13,
+    "turbidity": 0.11,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-09",
+    "chlorine": 1.17,
+    "turbidity": 0.15,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-10",
+    "chlorine": 1.04,
+    "turbidity": 0.08,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-11",
+    "chlorine": 1.15,
+    "turbidity": 0.11,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-12",
+    "chlorine": 1.18,
+    "turbidity": 0.15,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-13",
+    "chlorine": 1.08,
+    "turbidity": 0.07,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-14",
+    "chlorine": 1.03,
+    "turbidity": 0.11,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-15",
+    "chlorine": 0.98,
+    "turbidity": 0.15,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-16",
+    "chlorine": 0.94,
+    "turbidity": 0.06,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-17",
+    "chlorine": 0.93,
+    "turbidity": 0.11,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-18",
+    "chlorine": 0.87,
+    "turbidity": 0.15,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-19",
+    "chlorine": 0.86,
+    "turbidity": 0.07,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-20",
+    "chlorine": 0.83,
+    "turbidity": 0.1,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-21",
+    "chlorine": 0.81,
+    "turbidity": 0.15,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-22",
+    "chlorine": 0.75,
+    "turbidity": 0.08,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-23",
+    "chlorine": 0.69,
+    "turbidity": 0.1,
+    "ph": 7.3
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-24",
+    "chlorine": 0.65,
+    "turbidity": 0.14,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-25",
+    "chlorine": 0.65,
+    "turbidity": 0.07,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-26",
+    "chlorine": 0.59,
+    "turbidity": 0.12,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-27",
+    "chlorine": 0.55,
+    "turbidity": 0.14,
+    "ph": 7.4
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-28",
+    "chlorine": 0.51,
+    "turbidity": 0.07,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-29",
+    "chlorine": 0.48,
+    "turbidity": 0.1,
+    "ph": 7.5
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-30",
+    "chlorine": 0.45,
+    "turbidity": 0.14,
+    "ph": 7.3
+  }
+]

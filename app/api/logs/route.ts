@@ -1,17 +1,16 @@
 import { connection } from "next/server";
-import type { LogEntry } from "@/types";
+import { addLog, getLogs } from "@/lib/db";
+import { parseLog, readJSON } from "@/lib/validate";
 
 export async function GET(request: Request) {
   await connection();
   const plantId = new URL(request.url).searchParams.get("plant_id");
-  // TODO: query collections.logs from lib/db.ts, filtered by plantId
-  void plantId;
-  const items: LogEntry[] = [];
-  return Response.json(items);
+  if (!plantId) return Response.json({ error: "plant_id is required" }, { status: 400 });
+  return Response.json(await getLogs(plantId));
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as LogEntry;
-  // TODO: validate and insert into collections.logs
-  return Response.json(body, { status: 201 });
+  const parsed = parseLog(await readJSON(request));
+  if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
+  return Response.json(await addLog(parsed.value), { status: 201 });
 }

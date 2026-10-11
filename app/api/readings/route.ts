@@ -1,17 +1,16 @@
 import { connection } from "next/server";
-import type { Reading } from "@/types";
+import { addReading, getReadings } from "@/lib/db";
+import { parseReading, readJSON } from "@/lib/validate";
 
 export async function GET(request: Request) {
   await connection();
   const plantId = new URL(request.url).searchParams.get("plant_id");
-  // TODO: query collections.readings from lib/db.ts, filtered by plantId
-  void plantId;
-  const items: Reading[] = [];
-  return Response.json(items);
+  if (!plantId) return Response.json({ error: "plant_id is required" }, { status: 400 });
+  return Response.json(await getReadings(plantId));
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Reading;
-  // TODO: validate and insert into collections.readings
-  return Response.json(body, { status: 201 });
+  const parsed = parseReading(await readJSON(request));
+  if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
+  return Response.json(await addReading(parsed.value), { status: 201 });
 }

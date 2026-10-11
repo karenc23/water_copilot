@@ -1,0 +1,103 @@
+[
+  {
+    "plant_id": "plant-a",
+    "date": "2026-01-14",
+    "operator": "D. Evans",
+    "problem": "Loop return temp alarm at 37°F, duty circ pump stopped",
+    "steps_taken": [
+      "Switched to standby circulation pump",
+      "Reset duty pump overload",
+      "Rechecked return temp after 1 hour"
+    ],
+    "outcome": "Return temp back to 42°F; duty pump returned to service next day",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-03-02",
+    "operator": "J. Nicholai",
+    "problem": "Chlorine low at 0.4 mg/L after weekend, day tank level unchanged",
+    "steps_taken": [
+      "Opened bleed valve on hypochlorite pump",
+      "Ran pump until no bubbles",
+      "Retested after 30 minutes"
+    ],
+    "outcome": "Chlorine 1.0 mg/L; cause was loss of prime",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-05-12",
+    "operator": "S. Paul",
+    "problem": "Short filter runs and turbidity 0.28 NTU during spring breakup",
+    "steps_taken": [
+      "Backwashed filter 1",
+      "Checked coagulant pump running",
+      "Increased turbidity checks to every 4 hours"
+    ],
+    "outcome": "Turbidity held between 0.10 and 0.22 NTU through breakup",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-06-23",
+    "operator": "L. Frank",
+    "problem": "Raw water pump 1 would not start, breaker tripped",
+    "steps_taken": [
+      "Switched to standby raw water pump",
+      "Reset breaker on pump 1"
+    ],
+    "outcome": "Pump 1 ran normally after reset; no repeat",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-07-30",
+    "operator": "J. Nicholai",
+    "problem": "pH up to 8.1 after new soda ash batch",
+    "steps_taken": [
+      "Calibrated pH meter",
+      "Lowered soda ash stroke 5%",
+      "Retested after 1 hour"
+    ],
+    "outcome": "pH back to 7.5 next day",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-08-22",
+    "operator": "D. Evans",
+    "problem": "Filter 2 turbidity 0.31 NTU after only 30 hours of run time",
+    "steps_taken": [
+      "Backwashed filter 2",
+      "Filter-to-waste until below 0.15 NTU"
+    ],
+    "outcome": "Turbidity down to 0.12 NTU",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-05",
+    "operator": "L. Frank",
+    "problem": "Filter 2 turbidity high again, 0.34 NTU, short run",
+    "steps_taken": [
+      "Backwashed filter 2 twice",
+      "Checked coagulant pump running"
+    ],
+    "outcome": "Turbidity down to 0.15 NTU after second backwash",
+    "escalated": false
+  },
+  {
+    "plant_id": "plant-a",
+    "date": "2026-09-18",
+    "operator": "D. Evans",
+    "problem": "Filter 2 turbidity 0.36 NTU, third time in 30 days; some sand seen in backwash waste",
+    "steps_taken": [
+      "Backwashed filter 2",
+      "Switched duty to filter 1",
+      "Called RMW per Manual 2.5 and 8.1"
+    ],
+    "outcome": "Running on filter 1; RMW scheduled to inspect filter 2 media and underdrain",
+    "escalated": true
+  }
+]

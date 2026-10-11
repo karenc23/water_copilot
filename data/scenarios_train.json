@@ -1,0 +1,1266 @@
+[
+  {
+    "id": "train-01",
+    "description": "Filtered turbidity has been creeping up all week and the duty filter has been running since Monday. Headloss gauge reads higher than usual. Nothing else seems off.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-06",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-07",
+        "chlorine": 1.1,
+        "turbidity": 0.11,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-08",
+        "chlorine": 1.0,
+        "turbidity": 0.14,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-09",
+        "chlorine": 1.1,
+        "turbidity": 0.17,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-10",
+        "chlorine": 1.0,
+        "turbidity": 0.21,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-11",
+        "chlorine": 1.1,
+        "turbidity": 0.25,
+        "ph": 7.3
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-22",
+        "operator": "D. Evans",
+        "problem": "Routine backwash, filter 1",
+        "steps_taken": [
+          "Backwashed filter 1",
+          "Filter-to-waste until below 0.15 NTU"
+        ],
+        "outcome": "Turbidity back to 0.08 NTU",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Duty filter is due for backwash: turbidity reached 0.25 NTU after a long run with rising headloss. Normal end of a filter run.",
+      "escalate": false,
+      "key_steps": [
+        "Backwash the duty filter now since turbidity hit the 0.25 NTU trigger (Manual 2.2)",
+        "Backwash 10–15 minutes until waste runs clear, then filter-to-waste until below 0.15 NTU (Manual 2.3)",
+        "Recheck turbidity at 1 hour and 4 hours and record new clean-filter headloss (Manual 2.4)"
+      ]
+    }
+  },
+  {
+    "id": "train-02",
+    "description": "Chlorine was fine all week but this morning it's only 0.35. The day tank looks almost empty.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-03-09",
+        "chlorine": 1.1,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-03-10",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-03-11",
+        "chlorine": 1.1,
+        "turbidity": 0.1,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-03-12",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-03-13",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-03-14",
+        "chlorine": 0.35,
+        "turbidity": 0.09,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Hypochlorite day tank ran low, so the feed pump is drawing air or not enough solution. Low residual, but above the 0.2 mg/L emergency limit.",
+      "escalate": false,
+      "key_steps": [
+        "Mix a fresh batch: 1 gallon of 12.5% hypochlorite, filled to the 20-gallon mark (Manual 3.2)",
+        "Check the feed pump is primed and bleed air if needed (Manual 7.3)",
+        "Retest chlorine 30 minutes after refilling (Manual 3.2)"
+      ]
+    }
+  },
+  {
+    "id": "train-03",
+    "description": "Chlorine dropped to 0.15 this morning. The hypochlorite pump is running but there's solution leaking around the pump head. I tried priming it twice and it didn't help.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-12",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-13",
+        "chlorine": 1.1,
+        "turbidity": 0.1,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-14",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-15",
+        "chlorine": 0.9,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-16",
+        "chlorine": 0.15,
+        "turbidity": 0.09,
+        "ph": 7.3
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Hypochlorite feed pump has a failed diaphragm, so almost no chlorine is being fed. Residual is below the 0.2 mg/L EPA minimum.",
+      "escalate": true,
+      "key_steps": [
+        "Switch to the standby hypochlorite feed pump right away (Manual 3.3)",
+        "Contact the RMW now — residual is below 0.2 mg/L (Manual 3.3, 8.1)",
+        "If residual is not back to 0.2 mg/L within 4 hours, notify ADEC and prepare for a boil-water notice (Manual 3.3, 8.2)"
+      ]
+    }
+  },
+  {
+    "id": "train-04",
+    "description": "Chlorine has been dropping a little every day this week. It's still above the action level so I haven't done anything. The batch in the day tank was mixed about 12 days ago. The plant has been warm.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-03",
+        "chlorine": 1.2,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-04",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-05",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-06",
+        "chlorine": 0.9,
+        "turbidity": 0.1,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-07",
+        "chlorine": 0.8,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-08",
+        "chlorine": 0.7,
+        "turbidity": 0.08,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-09",
+        "chlorine": 0.6,
+        "turbidity": 0.09,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Slow chlorine drift from an old hypochlorite batch losing strength in a warm room. Still above 0.5 mg/L, but the 7-day decline needs action now.",
+      "escalate": false,
+      "key_steps": [
+        "Treat the multi-day decline as a problem even though it's in range (Manual 3.5)",
+        "Mix a fresh batch since the current one is older than 7 days (Manual 3.2)",
+        "Inspect the feed pump diaphragm and check valve (Manual 3.5)",
+        "Retest 30 minutes after the new batch and log the trend (Manual 3.2, 1.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-05",
+    "description": "Breakup started on the lake this week and the raw water is brown. I've backwashed twice a day but filtered turbidity keeps climbing. Online meter says 1.3 this morning and the bench meter agrees.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-11",
+        "chlorine": 1.1,
+        "turbidity": 0.12,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-12",
+        "chlorine": 1.0,
+        "turbidity": 0.15,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-13",
+        "chlorine": 1.0,
+        "turbidity": 0.22,
+        "ph": 7.2
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-14",
+        "chlorine": 0.9,
+        "turbidity": 0.4,
+        "ph": 7.2
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-15",
+        "chlorine": 0.9,
+        "turbidity": 0.7,
+        "ph": 7.1
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-16",
+        "chlorine": 0.8,
+        "turbidity": 1.3,
+        "ph": 7.1
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-14",
+        "operator": "S. Paul",
+        "problem": "Short filter runs from breakup",
+        "steps_taken": [
+          "Backwashed filter 1 twice",
+          "Increased turbidity checks to every 4 hours"
+        ],
+        "outcome": "Turbidity still 0.40 NTU after backwash",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Spring breakup raw water is overwhelming the filters. Bench meter confirms filtered turbidity above the 1.0 NTU EPA limit.",
+      "escalate": true,
+      "key_steps": [
+        "Stop sending the filter's water to the clearwell if possible (Manual 4.3)",
+        "Contact the RMW immediately and ADEC within 24 hours (Manual 4.3, 8.1)",
+        "Prepare for a boil-water notice since turbidity is above 1.0 NTU (Manual 8.2, 8.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-06",
+    "description": "Breakup is happening and filter runs are way shorter — I'm backwashing about every 30 hours instead of 3 days. Filtered turbidity has been in the 0.2s. Is something wrong?",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-04",
+        "chlorine": 1.1,
+        "turbidity": 0.1,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-05",
+        "chlorine": 1.0,
+        "turbidity": 0.14,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-06",
+        "chlorine": 1.1,
+        "turbidity": 0.21,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-07",
+        "chlorine": 1.0,
+        "turbidity": 0.24,
+        "ph": 7.2
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-08",
+        "chlorine": 1.0,
+        "turbidity": 0.22,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-09",
+        "chlorine": 1.1,
+        "turbidity": 0.26,
+        "ph": 7.3
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-05-06",
+        "operator": "S. Paul",
+        "problem": "Filter runs shortening during breakup",
+        "steps_taken": [
+          "Backwashed filter 2",
+          "Checked coagulant pump running"
+        ],
+        "outcome": "Turbidity dropped to 0.12 NTU",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Short filter runs are expected during spring breakup. Filtered turbidity is elevated but under 0.3 NTU, and backwashing brings it down.",
+      "escalate": false,
+      "key_steps": [
+        "Keep backwashing as needed — short runs are expected during breakup (Manual 2.2)",
+        "Backwash now since turbidity is above 0.25 NTU (Manual 2.3)",
+        "Confirm with the bench meter, check the coagulant pump, and test every 4 hours (Manual 4.2)"
+      ]
+    }
+  },
+  {
+    "id": "train-07",
+    "description": "pH has gone up every day this week and is 8.3 today. Chlorine looks normal. I changed the soda ash batch last Sunday.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-07",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-08",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.7
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-09",
+        "chlorine": 0.9,
+        "turbidity": 0.08,
+        "ph": 7.9
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-10",
+        "chlorine": 0.9,
+        "turbidity": 0.09,
+        "ph": 8.1
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-11",
+        "chlorine": 0.9,
+        "turbidity": 0.08,
+        "ph": 8.3
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Soda ash overfeed, probably from a stronger new batch, has pushed pH above 8.0. That reduces how well chlorine works, but it's still inside 6.5–8.5.",
+      "escalate": false,
+      "key_steps": [
+        "Calibrate the pH meter with pH 7 and pH 10 buffers to confirm the reading (Manual 5.1)",
+        "Lower the soda ash pump stroke in 5% steps (Manual 5.3)",
+        "Keep chlorine in the upper half of the target range until pH is below 7.8 (Manual 5.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-08",
+    "description": "pH keeps dropping and it's 6.3 today. The soda ash pump is humming but the day tank level hasn't moved in days.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-12",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-13",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.2
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-14",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.0
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-15",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 6.7
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-16",
+        "chlorine": 1.0,
+        "turbidity": 0.1,
+        "ph": 6.3
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Soda ash feed pump isn't delivering, so pH has fallen below 6.5. Corrosive water can release lead and copper.",
+      "escalate": true,
+      "key_steps": [
+        "Contact the RMW — pH is below 6.5 (Manual 5.4, 8.1)",
+        "Bleed air from the soda ash pump and check the foot valve and suction line for crystals (Manual 7.3)",
+        "Once feeding, raise the soda ash stroke in 5% steps and retest after 1 hour (Manual 5.2)"
+      ]
+    }
+  },
+  {
+    "id": "train-09",
+    "description": "Loop return temp alarm went off at 37°F overnight. The duty circ pump wasn't running. I switched to the standby pump and the temp is back up to 42°F. It's -20°F outside.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-19",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-20",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-21",
+        "chlorine": 1.2,
+        "turbidity": 0.07,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-22",
+        "chlorine": 1.1,
+        "turbidity": 0.1,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-23",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Duty circulation pump stopped, so loop return temperature dropped. The standby pump restored circulation in time with no loss of service.",
+      "escalate": false,
+      "key_steps": [
+        "Keep running on the standby circulation pump and recheck return temperature after 1 hour (Manual 6.2)",
+        "Check the duty pump's breaker and overload before trying it again (Manual 7.2)",
+        "Log the event (Manual 1.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-10",
+    "description": "It's -35°F. The north end of the loop stopped circulating sometime last night, probably 4 or 5 hours ago, and the school says their water pressure is very low. Circ pumps at the plant are both running.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-02",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-03",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-04",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-05",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-06",
+        "chlorine": 1.1,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-07",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.3
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Likely frozen main on the north loop. Circulation has been lost for more than 2 hours in extreme cold, and pressure loss at the school risks contamination.",
+      "escalate": true,
+      "key_steps": [
+        "Contact the RMW immediately — loss of circulation over 2 hours with a likely frozen line (Manual 6.4, 8.1)",
+        "Check distribution pressure; below 20 psi is a boil-water notice trigger (Manual 7.4, 8.2)",
+        "Contact ADEC about a boil-water notice for the affected area (Manual 8.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-11",
+    "description": "The online turbidimeter has read exactly 0.05 for five days. That seems too good. The bench meter read 0.25 this morning. It was -25°F last night.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-12-07",
+        "chlorine": 1.0,
+        "turbidity": 0.05,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-12-08",
+        "chlorine": 1.1,
+        "turbidity": 0.05,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-12-09",
+        "chlorine": 1.0,
+        "turbidity": 0.05,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-12-10",
+        "chlorine": 1.0,
+        "turbidity": 0.05,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-12-11",
+        "chlorine": 1.1,
+        "turbidity": 0.05,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Frozen turbidimeter sample line is giving a false, unchanging reading. Actual filtered turbidity from the bench meter is 0.25 NTU, at the backwash trigger.",
+      "escalate": false,
+      "key_steps": [
+        "Thaw the sample line with heat trace or a heat gun (no open flame) and flush 10 minutes (Manual 6.3)",
+        "Trust the bench meter and recalibrate the online meter since they differ by more than 0.1 NTU (Manual 4.4)",
+        "Backwash since actual turbidity reached 0.25 NTU (Manual 2.2, 2.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-12",
+    "description": "Raw water pump 1 wouldn't start this morning and the clearwell level was dropping. Breaker was tripped. I reset it and it's running fine now. Readings look normal.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-15",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-16",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-17",
+        "chlorine": 1.2,
+        "turbidity": 0.07,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-18",
+        "chlorine": 1.1,
+        "turbidity": 0.1,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-19",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-20",
+        "chlorine": 1.1,
+        "turbidity": 0.09,
+        "ph": 7.3
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Tripped breaker on raw water pump 1. It was reset successfully with no water quality impact.",
+      "escalate": false,
+      "key_steps": [
+        "Switch to the standby raw water pump first whenever the duty pump fails (Manual 7.2)",
+        "If the breaker trips again right after reset, leave it off and contact the RMW (Manual 7.2)",
+        "Log the event so repeat trips are visible (Manual 1.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-13",
+    "description": "Filter 2 turbidity is high again — 0.42 this morning even though I backwashed it twice yesterday. This keeps happening.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-24",
+        "chlorine": 1.0,
+        "turbidity": 0.18,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-25",
+        "chlorine": 1.1,
+        "turbidity": 0.26,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-26",
+        "chlorine": 1.0,
+        "turbidity": 0.31,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-27",
+        "chlorine": 1.0,
+        "turbidity": 0.22,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-28",
+        "chlorine": 1.1,
+        "turbidity": 0.35,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-29",
+        "chlorine": 1.0,
+        "turbidity": 0.38,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-30",
+        "chlorine": 1.0,
+        "turbidity": 0.42,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-04",
+        "operator": "L. Frank",
+        "problem": "Filter 2 turbidity high after short run",
+        "steps_taken": [
+          "Backwashed filter 2",
+          "Filter-to-waste 10 minutes"
+        ],
+        "outcome": "Turbidity down to 0.14 NTU",
+        "escalated": false
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-15",
+        "operator": "D. Evans",
+        "problem": "Filter 2 turbidity 0.33 NTU again",
+        "steps_taken": [
+          "Backwashed filter 2 twice"
+        ],
+        "outcome": "Turbidity down to 0.16 NTU",
+        "escalated": false
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-27",
+        "operator": "L. Frank",
+        "problem": "Filter 2 turbidity high, third time this month",
+        "steps_taken": [
+          "Backwashed filter 2",
+          "Checked coagulant pump running"
+        ],
+        "outcome": "Turbidity 0.22 NTU, still higher than normal",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Recurring filter 2 problem — likely media loss, mudballs, or underdrain damage. Turbidity stays above 0.3 NTU after two backwashes, and the problem has happened at least 3 times in 30 days.",
+      "escalate": true,
+      "key_steps": [
+        "Contact the RMW for a filter inspection — repeat problem and above 0.3 NTU after two backwashes (Manual 2.5, 8.1)",
+        "Switch duty to filter 1 while waiting (Manual 2.1)",
+        "Test turbidity every 4 hours until below 0.15 NTU (Manual 4.2)"
+      ]
+    }
+  },
+  {
+    "id": "train-14",
+    "description": "Chlorine was low on Tuesday so I turned the pump up. Now it's 2.4 and people at the washeteria say the water smells like bleach.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-04-06",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-04-07",
+        "chlorine": 0.45,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-04-08",
+        "chlorine": 1.6,
+        "turbidity": 0.09,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-04-09",
+        "chlorine": 2.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-04-10",
+        "chlorine": 2.4,
+        "turbidity": 0.09,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-04-07",
+        "operator": "J. Nicholai",
+        "problem": "Chlorine low at 0.45 mg/L",
+        "steps_taken": [
+          "Raised feed pump stroke"
+        ],
+        "outcome": "Chlorine 1.6 mg/L next day",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Overcorrection after the low chlorine reading: the feed pump stroke was raised too far. Residual is above 2.0 mg/L, but well below the 4.0 mg/L limit.",
+      "escalate": false,
+      "key_steps": [
+        "Lower the feed pump stroke in 5% steps and retest 30 minutes after each change (Manual 3.4)",
+        "Future increases: 5% steps, no more than 10% per hour (Manual 3.2)",
+        "Log the adjustment (Manual 1.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-15",
+    "description": "Chlorine is 4.3 today. I think the new batch was mixed with 2 gallons of bleach instead of 1 and the pump stroke was also turned up last week.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-11-02",
+        "chlorine": 1.2,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-11-03",
+        "chlorine": 1.4,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-11-04",
+        "chlorine": 1.5,
+        "turbidity": 0.09,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-11-05",
+        "chlorine": 2.6,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-11-06",
+        "chlorine": 4.3,
+        "turbidity": 0.09,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Hypochlorite batch mixed too strong, combined with a high pump stroke. Residual is above EPA's 4.0 mg/L maximum residual disinfectant level.",
+      "escalate": true,
+      "key_steps": [
+        "Stop the hypochlorite feed pump (Manual 3.4)",
+        "Contact the RMW — chlorine is above 4.0 mg/L (Manual 3.4, 8.1)",
+        "Do not restart until residual is below 2.0 mg/L; remix the batch correctly with 1 gallon (Manual 3.4, 3.2)"
+      ]
+    }
+  },
+  {
+    "id": "train-16",
+    "description": "Since the lake turned over last week, I'm backwashing every day and a half. Turbidity stays under 0.25 most of the time. Raw water smells a bit earthy.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-05",
+        "chlorine": 1.0,
+        "turbidity": 0.1,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-06",
+        "chlorine": 1.0,
+        "turbidity": 0.18,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-07",
+        "chlorine": 0.9,
+        "turbidity": 0.12,
+        "ph": 7.2
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-08",
+        "chlorine": 1.0,
+        "turbidity": 0.21,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-09",
+        "chlorine": 0.9,
+        "turbidity": 0.14,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-10-10",
+        "chlorine": 1.0,
+        "turbidity": 0.19,
+        "ph": 7.2
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "Fall lake turnover is raising raw water turbidity and shortening filter runs. This is expected seasonal behavior, and filtered water is staying in range.",
+      "escalate": false,
+      "key_steps": [
+        "Keep backwashing at the 0.25 NTU, 8 psi, or 72-hour trigger — short runs are normal during turnover (Manual 2.2)",
+        "Check raw water and confirm the coagulant pump is running (Manual 4.2)",
+        "Do not change the coagulant dose yourself; ask the RMW about a jar test if runs keep shortening (Manual 2.1)"
+      ]
+    }
+  },
+  {
+    "id": "train-17",
+    "description": "Monday morning chlorine is 0.4. The day tank level hasn't gone down since Saturday. There was a power blip Saturday night.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-23",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-24",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-25",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-26",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-27",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-02-28",
+        "chlorine": 0.4,
+        "turbidity": 0.09,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-01-20",
+        "operator": "D. Evans",
+        "problem": "Hypochlorite pump lost prime",
+        "steps_taken": [
+          "Opened bleed valve",
+          "Ran pump until no bubbles"
+        ],
+        "outcome": "Chlorine back to 1.0 mg/L within an hour",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Hypochlorite feed pump lost prime, likely after the power blip — the day tank level hasn't changed. One earlier occurrence a month ago is not a recurring pattern yet.",
+      "escalate": false,
+      "key_steps": [
+        "Open the bleed valve and run the pump until solution flows with no bubbles (Manual 7.3)",
+        "Check the foot valve and suction line for air leaks (Manual 7.3)",
+        "Retest chlorine 30 minutes after restoring prime (Manual 3.2)",
+        "After power outages, confirm chemical feed pumps restarted (Manual 7.5)"
+      ]
+    }
+  },
+  {
+    "id": "train-18",
+    "description": "Chlorine is low again, 0.45 today. I mixed a fresh batch and primed the pump on Tuesday and it came back up, but now it's dropping again.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-14",
+        "chlorine": 0.9,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-15",
+        "chlorine": 0.4,
+        "turbidity": 0.08,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-16",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-17",
+        "chlorine": 0.8,
+        "turbidity": 0.09,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-18",
+        "chlorine": 0.6,
+        "turbidity": 0.08,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-19",
+        "chlorine": 0.45,
+        "turbidity": 0.09,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-08-29",
+        "operator": "J. Nicholai",
+        "problem": "Chlorine low at 0.38 mg/L",
+        "steps_taken": [
+          "Mixed fresh batch",
+          "Primed feed pump"
+        ],
+        "outcome": "Chlorine 1.0 mg/L",
+        "escalated": false
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-06",
+        "operator": "L. Frank",
+        "problem": "Chlorine low at 0.42 mg/L",
+        "steps_taken": [
+          "Primed feed pump",
+          "Raised stroke 5%"
+        ],
+        "outcome": "Chlorine 0.9 mg/L",
+        "escalated": false
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-09-15",
+        "operator": "J. Nicholai",
+        "problem": "Chlorine low at 0.40 mg/L",
+        "steps_taken": [
+          "Mixed fresh batch",
+          "Primed feed pump"
+        ],
+        "outcome": "Chlorine 1.0 mg/L",
+        "escalated": false
+      }
+    ],
+    "expected": {
+      "diagnosis": "Recurring low chlorine — the 4th time in about 3 weeks. Fixes only work temporarily, which suggests a failing pump, check valves, or a suction leak. Readings are above 0.2, but the recurrence requires escalation.",
+      "escalate": true,
+      "key_steps": [
+        "Contact the RMW — the same problem has happened 3 or more times in 30 days (Manual 8.1)",
+        "Replace the feed pump check valves with the spare kit (Manual 7.3)",
+        "Inspect the pump diaphragm and log the trend (Manual 3.5, 1.3)"
+      ]
+    }
+  },
+  {
+    "id": "train-19",
+    "description": "Online turbidity has crept up from 0.12 to 0.28 over the week. I just backwashed on Wednesday and headloss is low. The bench meter reads 0.11.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-01",
+        "chlorine": 1.1,
+        "turbidity": 0.12,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-02",
+        "chlorine": 1.0,
+        "turbidity": 0.15,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-03",
+        "chlorine": 1.1,
+        "turbidity": 0.18,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-04",
+        "chlorine": 1.0,
+        "turbidity": 0.2,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-05",
+        "chlorine": 1.1,
+        "turbidity": 0.23,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-06",
+        "chlorine": 1.0,
+        "turbidity": 0.26,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-06-07",
+        "chlorine": 1.1,
+        "turbidity": 0.28,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "The online turbidimeter has drifted out of calibration. The bench meter shows filtered water is actually fine at 0.11 NTU.",
+      "escalate": false,
+      "key_steps": [
+        "Recalibrate the online turbidimeter with fresh standards — it differs from the bench meter by more than 0.1 NTU (Manual 4.4)",
+        "No backwash needed since actual turbidity is below 0.25 NTU (Manual 2.2)",
+        "Keep comparing online and bench readings daily (Manual 4.4)"
+      ]
+    }
+  },
+  {
+    "id": "train-20",
+    "description": "Houses at the top of the hill say pressure is weak in the evenings. The gauge at the high point read 28 psi at dinnertime. The high-service pump seems to be cycling on and off a lot.",
+    "readings": [
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-20",
+        "chlorine": 1.1,
+        "turbidity": 0.08,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-21",
+        "chlorine": 1.0,
+        "turbidity": 0.09,
+        "ph": 7.3
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-22",
+        "chlorine": 1.2,
+        "turbidity": 0.07,
+        "ph": 7.4
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-23",
+        "chlorine": 1.1,
+        "turbidity": 0.1,
+        "ph": 7.5
+      },
+      {
+        "plant_id": "plant-a",
+        "date": "2026-07-24",
+        "chlorine": 1.0,
+        "turbidity": 0.08,
+        "ph": 7.4
+      }
+    ],
+    "log_history": [],
+    "expected": {
+      "diagnosis": "High-service pump is short-cycling, likely a pressure switch problem, causing low evening pressure at the high point. Pressure is below 35 psi but above the 20 psi trigger.",
+      "escalate": false,
+      "key_steps": [
+        "Switch to the standby high-service pump (Manual 7.2)",
+        "Check the pressure switch and look for leaks or main breaks (Manual 7.4, 7.2)",
+        "If pressure falls below 20 psi anywhere, it's a boil-water notice trigger (Manual 7.4, 8.2)"
+      ]
+    }
+  }
+]

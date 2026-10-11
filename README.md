@@ -9,8 +9,11 @@ Built with Next.js (App Router), TypeScript, and Tailwind. The LLM is reached th
 ```bash
 npm install
 cp .env.example .env   # fill in the values
+npm run seed           # load data/readings_seed.json and data/logs_seed.json into MongoDB
 npm run dev            # http://localhost:3000
 ```
+
+`npm run seed` is safe to re-run: readings are upserted on `(plant_id, date)`, logs on `(plant_id, date, problem)`.
 
 ### Environment variables
 
@@ -36,18 +39,55 @@ app/
   results/              Evaluation results against scenarios
   api/
     troubleshoot/       POST: problem -> diagnosis, steps, escalate?
-    readings/           GET/POST readings
-    logs/               GET/POST log entries
+    readings/           GET ?plant_id= / POST a reading
+    logs/               GET ?plant_id= / POST a log entry
     handoff/            POST: generate a handoff note
 components/             Shared UI
 lib/
   llm.ts                OpenAI SDK client pointed at Luminal
   db.ts                 MongoDB client
   agents.ts             Agent logic (troubleshoot, handoff)
+  validate.ts           Runtime validation for request bodies and seed data
+scripts/seed.ts         Seeds MongoDB from data/readings_seed.json and data/logs_seed.json
 types/index.ts          Shared TypeScript types for the data formats below
 optimize/               Standalone Python script (separate from the web app)
 data/                   Sample data and test scenarios
 ```
+
+## Troubleshoot API
+
+`POST /api/troubleshoot`
+
+```json
+{
+  "plant_id": "plant-b",
+  "description": "Chlorine residual keeps dropping",
+  "readings": [],      // optional: defaults to the plant's last 30 readings in MongoDB
+  "logs": [],          // optional: defaults to the plant's last 20 log entries
+  "manual_text": "..." // optional: defaults to data/manual.md
+}
+```
+
+Response:
+
+```json
+{
+  "diagnosis": "...",
+  "steps": [{ "action": "...", "manual_section": "4.2 Chlorine Feed" }],
+  "escalate": true,
+  "escalation_message": "...",
+  "warnings": ["..."]
+}
+```
+
+### Safety rules
+
+The model is told both rules, and `lib/agents.ts` also enforces them in code:
+
+- **No invented doses.** Any amount with a dose/volume/mass unit (`mg/L`, `ppm`, `lb`, `gal`, `%`, ...) in the diagnosis, steps, or escalation message whose number doesn't appear in the manual (or in the readings) is replaced with `[amount not in manual — confirm with supervisor]`. With no manual, every amount is removed and every `manual_section` is `null`.
+- **Always escalate possible health risks.** Escalation is forced if the model reports a health risk, or if the latest reading breaches `HEALTH_LIMITS`: chlorine below 0.2 or above 4.0 mg/L, turbidity above 1.0 NTU, pH outside 6.5–8.5. These defaults follow EPA limits; confirm them against your plant's permit. If the model's reply can't be parsed, the result escalates by default.
+
+Every forced change is listed in `warnings`.
 
 ## Team ownership
 
@@ -109,7 +149,7 @@ All dates are ISO 8601 strings (`YYYY-MM-DD`). The TypeScript definitions live i
 
 ### Scenario
 
-Test cases used by `optimize/` and the `/results` page. One JSON file per scenario in `data/scenarios/`.
+Test cases used by `optimize/` and the `/results` page, stored as arrays in `data/scenarios_train.json` and `data/scenarios_test.json`.
 
 ```json
 {

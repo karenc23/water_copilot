@@ -1,7 +1,7 @@
 """Standalone optimization script (separate from the Next.js app).
 
-Placeholder: reads scenarios from ../data/scenarios and evaluates/optimizes
-the copilot against each scenario's `expected` block.
+Placeholder: reads data/scenarios_train.json and data/scenarios_test.json and
+evaluates/optimizes the copilot against each scenario's `expected` block.
 
 Usage:
     python optimize/optimize.py
@@ -13,13 +13,13 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
-def load_scenarios() -> list[dict]:
-    return [json.loads(p.read_text()) for p in sorted((DATA_DIR / "scenarios").glob("*.json"))]
+def load_scenarios(split: str) -> list[dict]:
+    return json.loads((DATA_DIR / f"scenarios_{split}.json").read_text())
 
 
 def main() -> None:
-    scenarios = load_scenarios()
-    print(f"Loaded {len(scenarios)} scenario(s)")
+    train, test = load_scenarios("train"), load_scenarios("test")
+    print(f"Loaded {len(train)} train and {len(test)} test scenario(s)")
     # TODO: implement
 
 
