@@ -11,7 +11,8 @@ export function getLLM(): OpenAI {
     if (!baseURL || !apiKey) {
       throw new Error("LUMINAL_BASE_URL and LUMINAL_API_KEY must be set in .env");
     }
-    client = new OpenAI({ baseURL, apiKey });
+    // The SDK default timeout is 10 minutes; a hung request should fail fast and be retried.
+    client = new OpenAI({ baseURL, apiKey, timeout: Number(process.env.LUMINAL_TIMEOUT_MS) || 120_000 });
   }
   return client;
 }
@@ -27,6 +28,8 @@ export interface ChatOptions {
   max_tokens?: number;
   /** Reasoning budget for reasoning models. Reasoning tokens count toward max_tokens. */
   reasoning_effort?: "none" | "low" | "medium" | "high";
+  /** Per-request timeout override in ms (default 2 minutes). */
+  timeout?: number;
   /** Label for the timing log line. */
   label?: string;
 }
@@ -44,12 +47,12 @@ export async function chat(
     ...(options.max_tokens ? { max_tokens: options.max_tokens } : {}),
     // "none" isn't in the SDK's type yet but OpenAI-compatible servers accept it.
     ...(options.reasoning_effort ? { reasoning_effort: options.reasoning_effort as "low" } : {}),
-  });
+  }, options.timeout ? { timeout: options.timeout } : undefined);
   const choice = res.choices[0];
   const u = res.usage;
   const reasoning = (u as { completion_tokens_details?: { reasoning_tokens?: number } } | undefined)
     ?.completion_tokens_details?.reasoning_tokens;
-  console.info(
+  if (process.env.LLM_LOG !== "off") console.info(
     `[llm] ${options.label ?? "chat"} ${model}${options.reasoning_effort ? ` effort=${options.reasoning_effort}` : ""} ${Date.now() - started} ms · ` +
       `${u?.prompt_tokens ?? "?"} in / ${u?.completion_tokens ?? "?"} out` +
       `${reasoning ? ` (${reasoning} reasoning)` : ""} · finish=${choice?.finish_reason}`,

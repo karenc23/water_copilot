@@ -3,6 +3,7 @@
 //
 // Usage: npm run try-scenarios                     (train-01, train-04, train-13)
 //        npm run try-scenarios -- train-05 train-18
+import "dotenv/config"; // load .env before anything reads process.env
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { runTroubleshoot } from "@/lib/pipeline";

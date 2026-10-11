@@ -20,6 +20,8 @@ export interface SafetyResult {
   diagnosis: string;
   steps: SafeStep[];
   warnings: string[];
+  /** What the safety layer removed: steps with bad citations, and doses not in the manual. */
+  dropped: { invalid_citation: number; dose: number };
 }
 
 const RMW_STEP_RE = /\b(contact|call|notify|phone)\b.*\b(rmw|remote maintenance worker)\b/i;
@@ -35,6 +37,7 @@ export function finalTier(
   readings: Reading[] = [],
 ): SafetyResult {
   const warnings = [...llm.warnings];
+  const dropped = { invalid_citation: 0, dose: 0 };
   const mode = getFailureMode(llm.failure_mode);
 
   // Tier: highest of the alerts, the chosen failure mode, and the model's own escalation call.
@@ -61,6 +64,7 @@ export function finalTier(
         return match;
       }
       flags.push(`dose not in manual: ${match}`);
+      dropped.dose++;
       warnings.push(`Removed dose "${match}" — not found in the manual.`);
       return "[amount not in manual — confirm with RMW]";
     });
@@ -71,6 +75,7 @@ export function finalTier(
   const steps: SafeStep[] = [];
   for (const s of llm.steps) {
     if (!s.manual_section || !sections.has(s.manual_section)) {
+      dropped.invalid_citation++;
       warnings.push(
         `Dropped step citing ${s.manual_section ? `nonexistent section ${s.manual_section}` : "no section"}: "${s.action}"`,
       );
@@ -93,7 +98,7 @@ export function finalTier(
     });
   }
 
-  return { tier, escalate, diagnosis, steps, warnings };
+  return { tier, escalate, diagnosis, steps, warnings, dropped };
 }
 
 /** Section to cite for the RMW call: the first red alert, else a red failure mode, else 8.1. */

@@ -10,10 +10,23 @@ import type { LogEntry, Reading } from "@/types";
 export const MAX_STEPS = 5;
 export const MAX_STEP_WORDS = 25;
 const MAX_TOKENS = 700;
-// Reasoning tokens count toward MAX_TOKENS. With this ~4k-token prompt even "low"
-// reasoning fills the 700-token cap before any JSON is written, so default to off.
-// The retry always turns it off so a reply cut off by the cap still gets an answer.
-const REASONING_EFFORT = (process.env.LUMINAL_REASONING_EFFORT || "none") as ChatOptions["reasoning_effort"];
+// Reasoning tokens count toward max_tokens. With this ~4k-token prompt even "low"
+// reasoning fills a 700-token cap before any JSON is written, so it gets a larger cap.
+const REASONING_MAX_TOKENS = 1500;
+const DEFAULT_REASONING_EFFORT = (process.env.LUMINAL_REASONING_EFFORT || "none") as ReasoningEffort;
+
+export type ReasoningEffort = "none" | "low";
+export type ContextOrder = "description_first" | "readings_first" | "logbook_first";
+
+/** Tunable parts of the LLM step. scripts/optimize.ts searches over these. */
+export interface TroubleshootOptions {
+  /** Rules/instructions part of the system prompt. The failure-mode list and JSON format are always appended by code. */
+  instructions?: string;
+  contextOrder?: ContextOrder;
+  maxSteps?: number;
+  /** "none" uses a 700-token cap; "low" uses 1,500. */
+  reasoningEffort?: ReasoningEffort;
+}
 
 export interface TroubleshootStep {
   action: string;
@@ -32,22 +45,36 @@ export interface TroubleshootResult {
   warnings: string[];
 }
 
-const FAILURE_MODE_LIST = FAILURE_MODES.map(
+export const FAILURE_MODE_LIST = FAILURE_MODES.map(
   (f) => `${f.id} [${f.tier}] ${f.name} (Manual ${f.manual_section}): ${f.description}`,
 ).join("\n");
 
-const SYSTEM_PROMPT = `You are a troubleshooting assistant for water treatment plant operators.
+export const DEFAULT_INSTRUCTIONS = `You are a troubleshooting assistant for water treatment plant operators.
 
 Rules you must follow:
 1. Only use guidance from the MANUAL. Every step must come from the manual and cite its section number in "manual_section" (e.g. "3.2"). If the manual doesn't cover the situation, say so and escalate.
 2. Never invent chemical doses. Only use amounts that appear verbatim in the MANUAL.
 3. If there is ANY possible risk to public health, set "health_risk": true and "escalate": true. Also escalate if the logbook shows the same problem 3+ times in 30 days or two failed backwashes.
-4. "diagnosis" is ONE sentence. Give at most ${MAX_STEPS} steps, most important first, each under ${MAX_STEP_WORDS} words.
-5. Choose the single best "failure_mode" id from this list:
+4. "diagnosis" is ONE sentence. List the most important step first; each step under ${MAX_STEP_WORDS} words.`;
+
+/** Instructions + the parts code always controls: step limit, failure modes, output format. */
+export function buildSystemPrompt(instructions: string, maxSteps: number): string {
+  return `${instructions.trim()}
+
+Give at most ${maxSteps} steps.
+
+Choose the single best "failure_mode" id from this list:
 ${FAILURE_MODE_LIST}
 
 Respond with ONLY a JSON object, no prose:
 {"diagnosis": string, "failure_mode": string, "steps": [{"action": string, "manual_section": string}], "health_risk": boolean, "escalate": boolean}`;
+}
+
+const CONTEXT_ORDERS: Record<ContextOrder, ("description" | "readings" | "logs" | "alerts")[]> = {
+  description_first: ["description", "readings", "logs", "alerts"],
+  readings_first: ["readings", "alerts", "logs", "description"],
+  logbook_first: ["logs", "readings", "alerts", "description"],
+};
 
 export async function troubleshoot(
   description: string,
@@ -55,22 +82,33 @@ export async function troubleshoot(
   logs: LogEntry[],
   manualText: string,
   alerts: Alert[] = [],
+  options: TroubleshootOptions = {},
 ): Promise<TroubleshootResult> {
+  const maxSteps = Math.max(1, Math.min(options.maxSteps ?? MAX_STEPS, MAX_STEPS));
+  const effort = options.reasoningEffort ?? DEFAULT_REASONING_EFFORT;
   const warnings: string[] = [];
-  const userPrompt = [
-    `PROBLEM DESCRIPTION:\n${description}`,
-    `RECENT READINGS (chlorine mg/L, turbidity NTU):\n${JSON.stringify(readings)}`,
-    `RECENT LOG ENTRIES:\n${JSON.stringify(logs)}`,
-    alerts.length
+
+  const blocks = {
+    description: `PROBLEM DESCRIPTION:\n${description}`,
+    readings: `RECENT READINGS (chlorine mg/L, turbidity NTU):\n${JSON.stringify(readings)}`,
+    logs: `RECENT LOG ENTRIES:\n${JSON.stringify(logs)}`,
+    alerts: alerts.length
       ? `AUTOMATED ALERTS:\n${alerts.map((a) => `- [${a.tier}] ${a.message} (Manual ${a.manual_section})`).join("\n")}`
       : "AUTOMATED ALERTS: none",
+  };
+  const userPrompt = [
+    ...CONTEXT_ORDERS[options.contextOrder ?? "description_first"].map((k) => blocks[k]),
     manualText.trim() ? `MANUAL:\n<<<\n${manualText}\n>>>` : "MANUAL: (none provided)",
   ].join("\n\n");
 
-  const parsed = await askWithRetry([
-    { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: userPrompt },
-  ]);
+  const parsed = await askWithRetry(
+    [
+      { role: "system", content: buildSystemPrompt(options.instructions ?? DEFAULT_INSTRUCTIONS, maxSteps) },
+      { role: "user", content: userPrompt },
+    ],
+    effort,
+    maxSteps,
+  );
   if (!parsed) {
     return {
       diagnosis: "Automated diagnosis unavailable.",
@@ -87,10 +125,10 @@ export async function troubleshoot(
     warnings.push(`Model chose unknown failure mode "${failure_mode}".`);
     failure_mode = null;
   }
-  if (parsed.steps.length > MAX_STEPS) {
-    warnings.push(`Model gave ${parsed.steps.length} steps; kept the first ${MAX_STEPS}.`);
+  if (parsed.steps.length > maxSteps) {
+    warnings.push(`Model gave ${parsed.steps.length} steps; kept the first ${maxSteps}.`);
   }
-  const steps = parsed.steps.slice(0, MAX_STEPS);
+  const steps = parsed.steps.slice(0, maxSteps);
   for (const s of steps) {
     const words = s.action.split(/\s+/).filter(Boolean).length;
     if (words > MAX_STEP_WORDS) warnings.push(`Step is ${words} words: "${s.action}"`);
@@ -113,13 +151,16 @@ export async function troubleshoot(
  */
 async function askWithRetry(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
+  effort: ReasoningEffort,
+  maxSteps: number,
 ): Promise<RawResult | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
+    const attemptEffort: ChatOptions["reasoning_effort"] = attempt === 0 ? effort : "none";
     let reply: string;
     try {
       const raw = await chatJSON(messages, {
-        max_tokens: MAX_TOKENS,
-        reasoning_effort: attempt === 0 ? REASONING_EFFORT : "none",
+        max_tokens: attemptEffort === "none" ? MAX_TOKENS : REASONING_MAX_TOKENS,
+        reasoning_effort: attemptEffort,
         label: attempt === 0 ? "troubleshoot" : "troubleshoot-retry",
       });
       const parsed = coerceResult(raw);
@@ -134,8 +175,7 @@ async function askWithRetry(
       { role: "assistant", content: reply || "(empty reply)" },
       {
         role: "user",
-        content:
-          "That was not valid JSON in the required format. Reply again with ONLY the JSON object: diagnosis (one sentence), failure_mode (id), steps (at most 5 of {action, manual_section}), health_risk (boolean), escalate (boolean). Keep it short.",
+        content: `That was not valid JSON in the required format. Reply again with ONLY the JSON object: diagnosis (one sentence), failure_mode (id), steps (at most ${maxSteps} of {action, manual_section}), health_risk (boolean), escalate (boolean). Keep it short.`,
       },
     ];
   }

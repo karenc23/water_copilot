@@ -1,10 +1,29 @@
 {
   "id": "example-001",
+  "difficulty": "standard",
   "description": "Chlorine residual dropping over three days with rising turbidity.",
   "readings": [
-    { "plant_id": "plant-a", "date": "2026-10-01", "chlorine": 1.2, "turbidity": 0.3, "ph": 7.4 },
-    { "plant_id": "plant-a", "date": "2026-10-02", "chlorine": 0.8, "turbidity": 0.6, "ph": 7.3 },
-    { "plant_id": "plant-a", "date": "2026-10-03", "chlorine": 0.4, "turbidity": 1.1, "ph": 7.2 }
+    {
+      "plant_id": "plant-a",
+      "date": "2026-10-01",
+      "chlorine": 1.2,
+      "turbidity": 0.3,
+      "ph": 7.4
+    },
+    {
+      "plant_id": "plant-a",
+      "date": "2026-10-02",
+      "chlorine": 0.8,
+      "turbidity": 0.6,
+      "ph": 7.3
+    },
+    {
+      "plant_id": "plant-a",
+      "date": "2026-10-03",
+      "chlorine": 0.4,
+      "turbidity": 1.1,
+      "ph": 7.2
+    }
   ],
   "log_history": [
     {
@@ -12,14 +31,21 @@
       "date": "2026-10-02",
       "operator": "J. Doe",
       "problem": "Chlorine residual below target",
-      "steps_taken": ["Checked chlorinator feed rate", "Increased dose 10%"],
+      "steps_taken": [
+        "Checked chlorinator feed rate",
+        "Increased dose 10%"
+      ],
       "outcome": "Residual did not recover",
       "escalated": false
     }
   ],
   "expected": {
     "diagnosis": "Placeholder diagnosis",
+    "failure_mode": "F7",
+    "tier": "red",
     "escalate": true,
-    "key_steps": ["Placeholder step"]
+    "key_steps": [
+      "Placeholder step"
+    ]
   }
 }

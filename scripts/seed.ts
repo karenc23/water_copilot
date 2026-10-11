@@ -1,5 +1,6 @@
 // Load data/readings_seed.json and data/logs_seed.json into MongoDB. Usage: npm run seed
 // Re-running is safe: readings are upserted on (plant_id, date), logs on (plant_id, date, problem).
+import "dotenv/config"; // load .env before anything reads process.env
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { closeDb, collections, ensureIndexes, getDb } from "@/lib/db";

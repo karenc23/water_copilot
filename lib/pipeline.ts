@@ -1,4 +1,4 @@
-import { troubleshoot } from "@/lib/agents";
+import { troubleshoot, type TroubleshootOptions } from "@/lib/agents";
 import { checkLogs, checkReadings, getFailureMode, type Alert, type Tier } from "@/lib/rules";
 import { finalTier, type SafeStep } from "@/lib/safety";
 import type { LogEntry, Reading } from "@/types";
@@ -30,20 +30,25 @@ export interface TroubleshootResponse {
   escalate: boolean;
   escalation_packet: EscalationPacket | null;
   warnings: string[];
+  /** Counts of what the safety layer removed (used for scoring in scripts/optimize.ts). */
+  safety_drops: { invalid_citation: number; dose: number };
 }
 
-export async function runTroubleshoot(input: {
-  plant_id: string;
-  description: string;
-  readings: Reading[];
-  logs: LogEntry[];
-  manualText: string;
-}): Promise<TroubleshootResponse> {
+export async function runTroubleshoot(
+  input: {
+    plant_id: string;
+    description: string;
+    readings: Reading[];
+    logs: LogEntry[];
+    manualText: string;
+  },
+  options: TroubleshootOptions = {},
+): Promise<TroubleshootResponse> {
   const { plant_id, description, readings, logs, manualText } = input;
   const asOf = latestDate(readings, logs);
 
   const alerts = [...checkReadings(readings), ...checkLogs(logs, asOf)];
-  const llm = await troubleshoot(description, readings, logs, manualText, alerts);
+  const llm = await troubleshoot(description, readings, logs, manualText, alerts, options);
   const safe = finalTier(llm, alerts, manualText, readings);
 
   return {
@@ -57,11 +62,12 @@ export async function runTroubleshoot(input: {
       ? buildEscalationPacket({ plant_id, description, readings, logs, alerts, asOf, tier: safe.tier, failure_mode: llm.failure_mode, steps: safe.steps })
       : null,
     warnings: safe.warnings,
+    safety_drops: safe.dropped,
   };
 }
 
 /** "Today" for the rules: the latest reading, or the latest log entry if there are no readings. */
-function latestDate(readings: Reading[], logs: LogEntry[]): string | undefined {
+export function latestDate(readings: Reading[], logs: LogEntry[]): string | undefined {
   const rows: { date: string }[] = readings.length ? readings : logs;
   return rows.map((r) => r.date).sort().at(-1);
 }

@@ -1,0 +1,4130 @@
+{
+  "generated_at": "2026-10-11T17:41:54.356Z",
+  "quick": false,
+  "train_scenarios": [
+    "train-01",
+    "train-02",
+    "train-03",
+    "train-04",
+    "train-05",
+    "train-06",
+    "train-07",
+    "train-08",
+    "train-09",
+    "train-10",
+    "train-11",
+    "train-12",
+    "train-13",
+    "train-14",
+    "train-15",
+    "train-16",
+    "train-17",
+    "train-18",
+    "train-19",
+    "train-20"
+  ],
+  "baselines": {
+    "plain_llm": {
+      "score": -18,
+      "metrics": {
+        "score": -18,
+        "max_score": 120,
+        "escalation_recall": 0.857,
+        "false_alarm_rate": 0.462,
+        "failure_mode_accuracy": 0.8,
+        "missed_escalations": 1,
+        "false_alarms": 6,
+        "dropped_steps": 73,
+        "errors": 0,
+        "avg_seconds": 3.425
+      }
+    },
+    "rules_only": {
+      "score": 87,
+      "metrics": {
+        "score": 87,
+        "max_score": 120,
+        "escalation_recall": 0.857,
+        "false_alarm_rate": 0,
+        "failure_mode_accuracy": 0.6,
+        "missed_escalations": 1,
+        "false_alarms": 0,
+        "dropped_steps": 0,
+        "errors": 0,
+        "avg_seconds": 0.001
+      }
+    }
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "strategies": [
+        {
+          "id": "r0-current",
+          "score": 103,
+          "metrics": {
+            "score": 103,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0.231,
+            "failure_mode_accuracy": 0.95,
+            "missed_escalations": 0,
+            "false_alarms": 3,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 1.667
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for water treatment plant operators.\n\nRules you must follow:\n1. Only use guidance from the MANUAL. Every step must come from the manual and cite its section number in \"manual_section\" (e.g. \"3.2\"). If the manual doesn't cover the situation, say so and escalate.\n2. Never invent chemical doses. Only use amounts that appear verbatim in the MANUAL.\n3. If there is ANY possible risk to public health, set \"health_risk\": true and \"escalate\": true. Also escalate if the logbook shows the same problem 3+ times in 30 days or two failed backwashes.\n4. \"diagnosis\" is ONE sentence. List the most important step first; each step under 25 words.",
+          "settings": {
+            "context_order": "description_first",
+            "max_steps": 5,
+            "reasoning_effort": "none"
+          },
+          "rationale": "The prompt currently in production.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 1,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 1,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": -1,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r0-escalation-checklist",
+          "score": 118,
+          "metrics": {
+            "score": 118,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.95,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 1.561
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, check every escalation trigger from manual Section 8.1 against the readings, alerts, logbook and description:\n- chlorine below 0.2 or above 4.0 mg/L\n- filtered turbidity above 1.0 NTU, or above 0.3 NTU after two backwashes\n- pH below 6.5 or above 8.5\n- distribution pressure below 20 psi, a main break, or a frozen/broken line\n- circulation lost for more than 2 hours\n- both duty and standby pumps failed\n- the same problem 3 or more times in 30 days in the logbook, even if fixed each time\n- anything else that could affect public health\nIf any trigger is met, set \"health_risk\": true and \"escalate\": true. Otherwise set both false — routine problems the manual tells the operator to fix (a backwash, a fresh batch, re-priming a pump) are not escalations.\n\nWrite a one-sentence diagnosis. Put the most important step first. Keep each step under 25 words.",
+          "settings": {
+            "context_order": "readings_first",
+            "max_steps": 4,
+            "reasoning_effort": "none"
+          },
+          "rationale": "Spell out the manual's escalation triggers so the model checks each one.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r0-diagnose-carefully",
+          "score": 108,
+          "metrics": {
+            "score": 108,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.842,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 1,
+            "avg_seconds": 13.766
+          },
+          "qualified": true,
+          "prompt": "You help water plant operators diagnose problems using only their plant's MANUAL.\n\nHow to diagnose:\n1. Read the logbook first: is this a repeat of an earlier problem? Three of the same problem in 30 days means escalate (Manual 8.1).\n2. Decide whether the readings are real. A reading stuck at one value, or an online meter that disagrees with the bench meter, is an instrument problem, not a water problem.\n3. Separate expected seasonal behavior (breakup, turnover) from real faults.\n4. Match the situation to the failure mode whose description fits best.\n\nRules: cite a manual section number for every step; never give a dose or amount that isn't in the manual; if there is any possible health risk, set \"health_risk\" and \"escalate\" to true. One-sentence diagnosis, most important step first, each step under 25 words.",
+          "settings": {
+            "context_order": "logbook_first",
+            "max_steps": 5,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Focus on picking the right failure mode, with brief reasoning allowed.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 0,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "failure_mode": null,
+                "drops": 0,
+                "error": "Error: 429 rate limit exceeded, retry after the indicated delay"
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        }
+      ],
+      "best_id": "r0-escalation-checklist"
+    },
+    {
+      "round": 1,
+      "strategies": [
+        {
+          "id": "r1-s1",
+          "score": 116,
+          "metrics": {
+            "score": 116,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.9,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 8.12
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, check every escalation trigger from manual Section 8.1 against the readings, alerts, logbook and description:\n- chlorine below 0.2 or above 4.0 mg/L\n- filtered turbidity above 1.0 NTU, or above 0.3 NTU after two backwashes\n- pH below 6.5 or above 8.5\n- distribution pressure below 20 psi, a main break, or a frozen/broken line\n- circulation lost for more than 2 hours\n- both duty and standby pumps failed\n- the same problem 3 or more times in 30 days in the logbook, even if fixed each time\n- anything else that could affect public health\nIf any trigger is met, set \"health_risk\": true and \"escalate\": true. Otherwise set both false — routine problems the manual tells the operator to fix (a backwash, a fresh batch, re-priming a pump) are not escalations.\n\nWhen selecting the failure mode, focus on the root cause. If a reading is abnormal but there is evidence of an equipment fault (e.g., pump not running, day tank level not dropping, power outage affecting pumps), choose the failure mode that describes the equipment fault rather than the symptom. Consult the manual sections for the specific equipment (e.g., 7.2, 7.3, 7.5) to guide your diagnosis.\n\nWrite a one-sentence diagnosis. Put the most important step first. Keep each step under 25 words.",
+          "settings": {
+            "context_order": "description_first",
+            "max_steps": 4,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Prioritize the description to see the narrative (e.g., power blip, day tank not dropping) before readings, and add low reasoning to consider root causes. This helps avoid misclassifying a pump/feed issue as a generic low chlorine symptom.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r1-s2",
+          "score": 120,
+          "metrics": {
+            "score": 120,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 1,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 1.736
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, check every escalation trigger from manual Section 8.1 against the readings, alerts, logbook and description:\n- chlorine below 0.2 or above 4.0 mg/L\n- filtered turbidity above 1.0 NTU, or above 0.3 NTU after two backwashes\n- pH below 6.5 or above 8.5\n- distribution pressure below 20 psi, a main break, or a frozen/broken line\n- circulation lost for more than 2 hours\n- both duty and standby pumps failed\n- the same problem 3 or more times in 30 days in the logbook, even if fixed each time\n- anything else that could affect public health\nIf any trigger is met, set \"health_risk\": true and \"escalate\": true. Otherwise set both false — routine problems the manual tells the operator to fix (a backwash, a fresh batch, re-priming a pump) are not escalations.\n\nReview the logbook for recurring problems. If the same problem has occurred before, or if there is a pattern of equipment issues, consider the specific failure mode related to that equipment. For example, if a pump has lost prime before and the current situation suggests a similar issue (e.g., after a power outage, day tank not dropping), classify it as a pump/feed problem using the relevant manual sections (e.g., 7.2, 7.3, 7.5).\n\nWrite a one-sentence diagnosis. Put the most important step first. Keep each step under 25 words.",
+          "settings": {
+            "context_order": "logbook_first",
+            "max_steps": 5,
+            "reasoning_effort": "none"
+          },
+          "rationale": "Use logbook-first context to surface recurring patterns and past equipment issues, which can indicate the correct failure mode. Allow more steps to include diagnostic checks and reinforce that recurring feed problems should be classified as pump/feed issues, not just low chlorine.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r1-s3",
+          "score": 116,
+          "metrics": {
+            "score": 116,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.9,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 6.547
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, check every escalation trigger from manual Section 8.1 against the readings, alerts, logbook and description:\n- chlorine below 0.2 or above 4.0 mg/L\n- filtered turbidity above 1.0 NTU, or above 0.3 NTU after two backwashes\n- pH below 6.5 or above 8.5\n- distribution pressure below 20 psi, a main break, or a frozen/broken line\n- circulation lost for more than 2 hours\n- both duty and standby pumps failed\n- the same problem 3 or more times in 30 days in the logbook, even if fixed each time\n- anything else that could affect public health\nIf any trigger is met, set \"health_risk\": true and \"escalate\": true. Otherwise set both false — routine problems the manual tells the operator to fix (a backwash, a fresh batch, re-priming a pump) are not escalations.\n\nBefore interpreting readings, check the status of associated equipment. If the equipment that controls the reading is not operating normally, the failure mode should reflect the equipment fault. For instance, if chlorine is low but the hypochlorite pump is not running or the day tank level is unchanged, the failure mode is pump/feed loss of prime (Manual 7.2, 7.3), not just low chlorine residual.\n\nWrite a one-sentence diagnosis. Put the most important step first. Keep each step under 25 words.",
+          "settings": {
+            "context_order": "readings_first",
+            "max_steps": 3,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Readings-first but with low reasoning to encourage checking equipment status before interpreting readings. A concise prompt with a clear rule: if the equipment controlling a reading is faulty, choose the equipment failure mode. Fewer steps keep focus on the most critical actions.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        }
+      ],
+      "best_id": "r1-s2"
+    },
+    {
+      "round": 2,
+      "strategies": [
+        {
+          "id": "r2-s1",
+          "score": 116,
+          "metrics": {
+            "score": 116,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.9,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 10.003
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, review all readings and compare them to every escalation trigger defined in the manual's escalation section (e.g., Section 8.1). If any trigger is met, set health_risk and escalate to true. Otherwise set both false — routine manual-directed fixes like backwash, fresh batch, or re-priming are not escalations.\n\nYou will be given a list of possible failure modes with tiers. Choose the failure mode whose description best matches the current situation, using the manual to confirm. Write a one-sentence diagnosis.\n\nThen provide up to 4 steps, most important first, each under 25 words and citing a manual section. Ensure every cited section exists in the manual. If you are unsure whether a condition is a health risk, escalate.",
+          "settings": {
+            "context_order": "readings_first",
+            "max_steps": 4,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Prioritizes readings to catch quantitative escalation triggers early, uses low reasoning to systematically map readings to failure modes and ensure correct tier, and limits steps to 4 to keep focus on critical actions.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r2-s2",
+          "score": 118,
+          "metrics": {
+            "score": 118,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.95,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 1.801
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nFirst, review the logbook for recurring problems. If the same issue has happened before, use that history to guide your failure mode selection. Check all escalation triggers from the manual's escalation section (e.g., Section 8.1): if any trigger is met, set health_risk and escalate to true. Otherwise set both false. Routine fixes are not escalations.\n\nYou will be given a list of failure modes with tiers; pick the one that best matches the situation, especially for pump or chemical feed issues. Write a one-sentence diagnosis.\n\nProvide up to 5 steps, most important first, each under 25 words and citing a manual section. Only cite sections that exist in the manual.",
+          "settings": {
+            "context_order": "logbook_first",
+            "max_steps": 5,
+            "reasoning_effort": "none"
+          },
+          "rationale": "Uses logbook history to identify recurring patterns and correctly classify pump/feed failure modes, with no reasoning to avoid overthinking, and allows 5 steps for thorough corrective actions.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r2-s3",
+          "score": 116,
+          "metrics": {
+            "score": 116,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.9,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 8.908
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, read the description and check it against all escalation triggers in the manual's escalation section (e.g., Section 8.1). If any trigger is met, set health_risk and escalate to true. Otherwise set both false. Routine manual-directed fixes are not escalations.\n\nYou will be given a list of failure modes with tiers. Choose the failure mode that best matches the situation, using the manual to confirm. Write a one-sentence diagnosis that identifies the most likely failure mode.\n\nThen provide up to 3 steps, most important first, each under 25 words and citing a manual section. Double-check that each cited section number is present in the manual to avoid dropped steps.",
+          "settings": {
+            "context_order": "description_first",
+            "max_steps": 3,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Focuses on diagnosis and step ordering with description context to capture qualitative cues, uses low reasoning for careful section citation to avoid dropped steps, and keeps steps to 3 for clarity.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        }
+      ],
+      "best_id": "r1-s2"
+    },
+    {
+      "round": 3,
+      "strategies": [
+        {
+          "id": "r3-s1",
+          "score": 118,
+          "metrics": {
+            "score": 118,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.95,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 13.214
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for a small rural water treatment plant. Use ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount not written in the manual. Before answering, systematically compare all readings against the manual's acceptable ranges. Check for any condition that could affect public health, such as: disinfectant residual outside limits, turbidity above limits, pH outside safe range, loss of pressure or circulation, pump failures, or recurring problems. If any such condition exists, set \"health_risk\": true and \"escalate\": true. Otherwise, set both false. Review the logbook for patterns: if the same problem has occurred multiple times, consider the related failure mode and cite the relevant manual sections. Write a one-sentence diagnosis. List the most important steps first, each under 25 words, each citing a manual section. Do not invent doses.",
+          "settings": {
+            "context_order": "readings_first",
+            "max_steps": 4,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Prioritize objective readings first to catch out-of-range values, use low reasoning to carefully map to failure modes, and limit steps to 4 to encourage conciseness while avoiding dropped steps.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F7",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r3-s2",
+          "score": 109,
+          "metrics": {
+            "score": 109,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0.077,
+            "failure_mode_accuracy": 0.85,
+            "missed_escalations": 0,
+            "false_alarms": 1,
+            "dropped_steps": 0,
+            "errors": 0,
+            "avg_seconds": 1.846
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for a small rural water treatment plant. Use ONLY the MANUAL. Cite a manual section for every step. Never invent chemical doses. First, review the logbook for any recurring problems or equipment issues. If the same problem has occurred 3 or more times in 30 days, or if there is a pattern suggesting chronic failure, treat it as a potential health risk and escalate. Also check all readings against manual limits: any exceedance of health-based limits (e.g., chlorine, turbidity, pH, pressure, circulation) requires escalation. If any health risk is possible, set \"health_risk\": true and \"escalate\": true. Otherwise, set both false. Identify the most likely failure mode based on both current readings and logbook history. Provide a one-sentence diagnosis. Then list the key corrective steps, each citing a manual section, in order of priority. Keep each step under 25 words.",
+          "settings": {
+            "context_order": "logbook_first",
+            "max_steps": 3,
+            "reasoning_effort": "none"
+          },
+          "rationale": "Focus on recurring issues and equipment history to identify failure modes, with concise steps. Use logbook first to detect patterns that might trigger escalation, and keep steps minimal to reduce risk of dropped steps.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": -1,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F13",
+                "drops": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "r3-s3",
+          "score": 90,
+          "metrics": {
+            "score": 90,
+            "max_score": 120,
+            "escalation_recall": 1,
+            "false_alarm_rate": 0,
+            "failure_mode_accuracy": 0.875,
+            "missed_escalations": 0,
+            "false_alarms": 0,
+            "dropped_steps": 2,
+            "errors": 4,
+            "avg_seconds": 15.161
+          },
+          "qualified": true,
+          "prompt": "You are a troubleshooting assistant for a small rural water treatment plant. Use ONLY the MANUAL. Every step must cite the manual section number. Never state a chemical dose not in the manual. Begin by reading the operator's description for reported symptoms. Then check all readings against manual acceptable ranges, and review the logbook for related history. Escalate if there is any possible health risk: this includes but is not limited to disinfectant residual below minimum or above maximum, turbidity above limits, pH outside safe range, low pressure, loss of circulation, pump failures, or repeated problems. If any such condition is present, set \"health_risk\": true and \"escalate\": true. Otherwise set both false. Determine the most specific failure mode that fits the evidence, citing the corresponding manual sections. Write a one-sentence diagnosis. List the most important steps first, each under 25 words, each with a manual section citation.",
+          "settings": {
+            "context_order": "description_first",
+            "max_steps": 5,
+            "reasoning_effort": "low"
+          },
+          "rationale": "Start with the operator's description to understand reported symptoms, then cross-check readings and logbook. Use low reasoning to carefully integrate all information and avoid missed escalations, with a moderate step limit.",
+          "scenarios": [
+            {
+              "id": "train-01",
+              "score": 0,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "failure_mode": null,
+                "drops": 0,
+                "error": "Error: 429 rate limit exceeded, retry after the indicated delay"
+              }
+            },
+            {
+              "id": "train-02",
+              "score": 0,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "failure_mode": null,
+                "drops": 0,
+                "error": "Error: 429 rate limit exceeded, retry after the indicated delay"
+              }
+            },
+            {
+              "id": "train-03",
+              "score": 5,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F5"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F5",
+                "drops": 1
+              }
+            },
+            {
+              "id": "train-04",
+              "score": 5,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 1
+              }
+            },
+            {
+              "id": "train-05",
+              "score": 0,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F7"
+              },
+              "got": {
+                "escalate": false,
+                "failure_mode": null,
+                "drops": 0,
+                "error": "Error: 429 rate limit exceeded, retry after the indicated delay"
+              }
+            },
+            {
+              "id": "train-06",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-07",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F9",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-08",
+              "score": 4,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F9"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-09",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F10"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F10",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-10",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F11"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F11",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-11",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-12",
+              "score": 0,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "failure_mode": null,
+                "drops": 0,
+                "error": "Error: 429 rate limit exceeded, retry after the indicated delay"
+              }
+            },
+            {
+              "id": "train-13",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F3"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F3",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-14",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-15",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F6"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F6",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-16",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F2"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F2",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-17",
+              "score": 4,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-18",
+              "score": 6,
+              "expected": {
+                "escalate": true,
+                "failure_mode": "F4"
+              },
+              "got": {
+                "escalate": true,
+                "tier": "red",
+                "failure_mode": "F4",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-19",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F8"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F8",
+                "drops": 0
+              }
+            },
+            {
+              "id": "train-20",
+              "score": 6,
+              "expected": {
+                "escalate": false,
+                "failure_mode": "F12"
+              },
+              "got": {
+                "escalate": false,
+                "tier": "yellow",
+                "failure_mode": "F12",
+                "drops": 0
+              }
+            }
+          ]
+        }
+      ],
+      "best_id": "r1-s2"
+    }
+  ],
+  "test": {
+    "plain_llm": {
+      "score": -18,
+      "metrics": {
+        "score": -18,
+        "max_score": 60,
+        "escalation_recall": 1,
+        "false_alarm_rate": 0.5,
+        "failure_mode_accuracy": 0.9,
+        "missed_escalations": 0,
+        "false_alarms": 3,
+        "dropped_steps": 51,
+        "errors": 0,
+        "avg_seconds": 4.755
+      }
+    },
+    "rules_only": {
+      "score": 37,
+      "metrics": {
+        "score": 37,
+        "max_score": 60,
+        "escalation_recall": 0.75,
+        "false_alarm_rate": 0,
+        "failure_mode_accuracy": 0.6,
+        "missed_escalations": 1,
+        "false_alarms": 0,
+        "dropped_steps": 0,
+        "errors": 0,
+        "avg_seconds": 0
+      }
+    },
+    "best": {
+      "id": "r1-s2",
+      "score": 55,
+      "metrics": {
+        "score": 55,
+        "max_score": 60,
+        "escalation_recall": 1,
+        "false_alarm_rate": 0.167,
+        "failure_mode_accuracy": 1,
+        "missed_escalations": 0,
+        "false_alarms": 1,
+        "dropped_steps": 0,
+        "errors": 0,
+        "avg_seconds": 5.928
+      },
+      "scenarios": [
+        {
+          "id": "test-01",
+          "score": 6,
+          "expected": {
+            "escalate": true,
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "failure_mode": "F5",
+            "sections": [
+              "3.3",
+              "3.3",
+              "7.3",
+              "3.3",
+              "1.3"
+            ],
+            "drops": 0,
+            "tier": "red",
+            "steps": [
+              "Contact your Remote Maintenance Worker now (Manual §3.3) (3.3)",
+              "Take all Section 3.2 steps now: check day tank level, mix fresh batch if low, and check feed pump. (3.3)",
+              "Check feed pump prime; if lost, open bleed valve and run until steady bubble-free stream. (7.3)",
+              "Switch to standby feed pump if duty pump has failed. (3.3)",
+              "Log the trend and all steps taken in the logbook. (1.3)"
+            ],
+            "alerts": [
+              "CL_CRITICAL_LOW",
+              "CL_FALLING"
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-02",
+          "score": 6,
+          "expected": {
+            "escalate": false,
+            "failure_mode": "F1"
+          },
+          "got": {
+            "escalate": false,
+            "failure_mode": "F1",
+            "sections": [
+              "1.2",
+              "1.3",
+              "4.4",
+              "5.1"
+            ],
+            "drops": 0,
+            "tier": "green",
+            "steps": [
+              "Continue daily entry-point readings by 9:00 AM; all values are in target range. (1.2)",
+              "Log readings and any problems in the logbook as usual. (1.3)",
+              "Compare online turbidimeter to bench meter daily to confirm accuracy. (4.4)",
+              "Calibrate the pH meter daily with pH 7 and pH 10 buffers. (5.1)"
+            ],
+            "alerts": [],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-03",
+          "score": 6,
+          "expected": {
+            "escalate": true,
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": true,
+            "failure_mode": "F10",
+            "sections": [
+              "8.1",
+              "6.2",
+              "6.4",
+              "1.3"
+            ],
+            "drops": 0,
+            "tier": "red",
+            "steps": [
+              "Contact your Remote Maintenance Worker now (Manual §8.1) (8.1)",
+              "Keep the standby circulation pump running and recheck loop return temperature after 1 hour. (6.2)",
+              "Check distribution pressure and watch for any frozen or broken line. (6.4)",
+              "Log the trip, actions, and outcome in the logbook. (1.3)"
+            ],
+            "alerts": [
+              "LOG_RECURRING"
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-04",
+          "score": 6,
+          "expected": {
+            "escalate": false,
+            "failure_mode": "F9"
+          },
+          "got": {
+            "escalate": false,
+            "failure_mode": "F9",
+            "sections": [
+              "5.2",
+              "5.2",
+              "5.1",
+              "1.3"
+            ],
+            "drops": 0,
+            "tier": "yellow",
+            "steps": [
+              "Check soda ash day tank level and mix a fresh batch, then verify feed pump is running and primed. (5.2)",
+              "Raise soda ash pump stroke in 5% steps, retesting pH after 1 hour. (5.2)",
+              "Calibrate the pH meter daily with pH 7 and pH 10 buffers to confirm the reading. (5.1)",
+              "Log the pH trend and the empty tank/weak batch in the logbook. (1.3)"
+            ],
+            "alerts": [
+              "PH_LOW"
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-05",
+          "score": 6,
+          "expected": {
+            "escalate": true,
+            "failure_mode": "F7"
+          },
+          "got": {
+            "escalate": true,
+            "failure_mode": "F7",
+            "sections": [
+              "4.3",
+              "4.4",
+              "4.3",
+              "7.5",
+              "4.2"
+            ],
+            "drops": 0,
+            "tier": "red",
+            "steps": [
+              "Contact your Remote Maintenance Worker now (Manual §4.3) (4.3)",
+              "Confirm the 1.4 NTU reading with the bench turbidimeter. (4.4)",
+              "Stop sending that filter's water to the clearwell if possible. (4.3)",
+              "Restart the filter with filter-to-waste and backwash per procedure. (7.5)",
+              "Increase turbidity readings to every 4 hours until below 0.15 NTU. (4.2)"
+            ],
+            "alerts": [
+              "TURB_CRITICAL",
+              "TURB_RISING"
+            ],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-06",
+          "score": 6,
+          "expected": {
+            "escalate": false,
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "failure_mode": "F10",
+            "sections": [
+              "6.2",
+              "6.2",
+              "6.2",
+              "1.3"
+            ],
+            "drops": 0,
+            "tier": "yellow",
+            "steps": [
+              "Confirm circulation pump is running; switch to standby if it is not. (6.2)",
+              "Reset the faulted boiler and check heat-add settings. (6.2)",
+              "Recheck loop return temperature after 1 hour to confirm recovery. (6.2)",
+              "Log the boiler fault, reset, and temperature trend in the logbook. (1.3)"
+            ],
+            "alerts": [],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-07",
+          "score": 6,
+          "expected": {
+            "escalate": false,
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "failure_mode": "F6",
+            "sections": [
+              "3.4",
+              "3.4",
+              "3.1"
+            ],
+            "drops": 0,
+            "tier": "yellow",
+            "steps": [
+              "Lower the hypochlorite feed pump stroke in 5% steps and retest 30 minutes after each change. (3.4)",
+              "Check that the last batch was mixed correctly. (3.4)",
+              "Keep chlorine within the 0.8–1.5 mg/L target and log the change. (3.1)"
+            ],
+            "alerts": [],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-08",
+          "score": 6,
+          "expected": {
+            "escalate": true,
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "failure_mode": "F13",
+            "sections": [
+              "7.4",
+              "7.4",
+              "1.3",
+              "8.3"
+            ],
+            "drops": 0,
+            "tier": "red",
+            "steps": [
+              "Contact your Remote Maintenance Worker now (Manual §7.4) (7.4)",
+              "Check high-service pumps and look for leaks or the main break location. (7.4)",
+              "Log the break, pressure reading, steps taken, and escalation in the logbook. (1.3)",
+              "If RMW/ADEC unreachable within 2 hours, issue precautionary notice yourself. (8.3)"
+            ],
+            "alerts": [],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-09",
+          "score": 1,
+          "expected": {
+            "escalate": false,
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "failure_mode": "F12",
+            "sections": [
+              "8.1",
+              "7.3",
+              "7.3",
+              "5.2",
+              "5.1"
+            ],
+            "drops": 0,
+            "tier": "red",
+            "steps": [
+              "Contact your Remote Maintenance Worker now (Manual §8.1) (8.1)",
+              "Bleed air from soda ash pump until steady bubble-free stream; check foot valve and suction line for air leaks or crystals. (7.3)",
+              "Since prime was lost again within a week, replace the check valves with the spare kit. (7.3)",
+              "Raise soda ash pump stroke in 5% steps, retesting pH after 1 hour, to bring pH back to 7.0-7.8. (5.2)",
+              "Calibrate pH meter daily with pH 7 and pH 10 buffers and log the recurring prime loss. (5.1)"
+            ],
+            "alerts": [],
+            "warnings": []
+          }
+        },
+        {
+          "id": "test-10",
+          "score": 6,
+          "expected": {
+            "escalate": false,
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "failure_mode": "F2",
+            "sections": [
+              "4.2",
+              "2.3",
+              "2.3",
+              "2.4",
+              "4.2"
+            ],
+            "drops": 0,
+            "tier": "yellow",
+            "steps": [
+              "Confirm the 0.29 NTU reading with the bench turbidimeter before acting. (4.2)",
+              "Backwash the duty filter: take it offline, backwash 10–15 min until waste runs clear. (2.3)",
+              "Rinse with filter-to-waste at least 10 min until turbidity is below 0.15 NTU, then return to service. (2.3)",
+              "Check turbidity 1 hour and 4 hours after backwash; backwash again if still 0.25 NTU or higher. (2.4)",
+              "Increase readings to every 4 hours until turbidity is below 0.15 NTU. (4.2)"
+            ],
+            "alerts": [
+              "TURB_HIGH",
+              "TURB_RISING"
+            ],
+            "warnings": []
+          }
+        }
+      ]
+    }
+  },
+  "best_strategy": {
+    "id": "r1-s2",
+    "round": 1,
+    "score": 120,
+    "metrics": {
+      "score": 120,
+      "max_score": 120,
+      "escalation_recall": 1,
+      "false_alarm_rate": 0,
+      "failure_mode_accuracy": 1,
+      "missed_escalations": 0,
+      "false_alarms": 0,
+      "dropped_steps": 0,
+      "errors": 0,
+      "avg_seconds": 1.736
+    },
+    "qualified": true,
+    "prompt": "You are a troubleshooting assistant for operators at a small rural water treatment plant.\n\nUse ONLY the MANUAL. Every step must cite the manual section number it comes from. Never state a chemical dose or amount that is not written in the manual.\n\nBefore answering, check every escalation trigger from manual Section 8.1 against the readings, alerts, logbook and description:\n- chlorine below 0.2 or above 4.0 mg/L\n- filtered turbidity above 1.0 NTU, or above 0.3 NTU after two backwashes\n- pH below 6.5 or above 8.5\n- distribution pressure below 20 psi, a main break, or a frozen/broken line\n- circulation lost for more than 2 hours\n- both duty and standby pumps failed\n- the same problem 3 or more times in 30 days in the logbook, even if fixed each time\n- anything else that could affect public health\nIf any trigger is met, set \"health_risk\": true and \"escalate\": true. Otherwise set both false — routine problems the manual tells the operator to fix (a backwash, a fresh batch, re-priming a pump) are not escalations.\n\nReview the logbook for recurring problems. If the same problem has occurred before, or if there is a pattern of equipment issues, consider the specific failure mode related to that equipment. For example, if a pump has lost prime before and the current situation suggests a similar issue (e.g., after a power outage, day tank not dropping), classify it as a pump/feed problem using the relevant manual sections (e.g., 7.2, 7.3, 7.5).\n\nWrite a one-sentence diagnosis. Put the most important step first. Keep each step under 25 words.",
+    "settings": {
+      "context_order": "logbook_first",
+      "max_steps": 5,
+      "reasoning_effort": "none"
+    },
+    "rationale": "Use logbook-first context to surface recurring patterns and past equipment issues, which can indicate the correct failure mode. Allow more steps to include diagnostic checks and reinforce that recurring feed problems should be classified as pump/feed issues, not just low chlorine."
+  }
+}

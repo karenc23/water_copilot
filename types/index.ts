@@ -20,11 +20,17 @@ export interface LogEntry {
 
 export interface Scenario {
   id: string;
+  /** "hard": danger only in words, misleading descriptions, instrument errors, near-threshold counts, two problems, or logbook-dependent answers. */
+  difficulty?: "hard" | "standard";
   description: string;
   readings: Reading[];
   log_history: LogEntry[];
   expected: {
     diagnosis: string;
+    /** Failure mode id from data/failure_modes.json */
+    failure_mode: string;
+    /** red = escalate; otherwise the failure mode's tier. */
+    tier: "green" | "yellow" | "red";
     escalate: boolean;
     key_steps: string[];
   };
