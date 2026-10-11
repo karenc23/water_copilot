@@ -1,7 +1,9 @@
 // Prompt/settings optimizer for the troubleshoot pipeline (rules → LLM → safety).
 //
-// Usage: npx tsx scripts/optimize.ts          (40 train scenarios, 4 rounds)
+// Usage: npx tsx scripts/optimize.ts          (40 train scenarios, 4 rounds, 20 test)
 //        npx tsx scripts/optimize.ts --quick  (5 hard train scenarios, 1 round)
+//        npx tsx scripts/optimize.ts --train 20 --rounds 3 --test 10
+//          (subsets are stratified by difficulty and escalation, so the mix stays the same)
 //
 // Round 0 scores one deliberately generic strategy on data/scenarios_train.json.
 // Each later round asks a critic LLM call for 3 new strategies, based on the current
@@ -30,7 +32,12 @@ import type { Scenario } from "@/types";
 process.env.LLM_LOG = "off"; // thousands of calls; this script prints its own table
 
 const QUICK = process.argv.includes("--quick");
-const ROUNDS = QUICK ? 1 : 4;
+function intFlag(name: string): number | undefined {
+  const i = process.argv.indexOf(name);
+  const v = i === -1 ? NaN : Number(process.argv[i + 1]);
+  return Number.isInteger(v) && v > 0 ? v : undefined;
+}
+const ROUNDS = intFlag("--rounds") ?? (QUICK ? 1 : 4);
 const CONCURRENCY = 5;
 const MAX_ERROR_RATE = 0.3; // abort if more than this share of a phase's calls error
 const CRITIC_WORST = 5; // scenarios shown to the critic each round
@@ -40,8 +47,32 @@ const OUT_FILE = path.join(DATA_DIR, QUICK ? "results_quick.json" : "results.jso
 
 const manual = readFileSync(path.join(DATA_DIR, "manual.md"), "utf8");
 const allTrain: Scenario[] = JSON.parse(readFileSync(path.join(DATA_DIR, "scenarios_train.json"), "utf8"));
-const test: Scenario[] = JSON.parse(readFileSync(path.join(DATA_DIR, "scenarios_test.json"), "utf8"));
-const train = QUICK ? allTrain.filter((s) => QUICK_IDS.includes(s.id)) : allTrain;
+const allTest: Scenario[] = JSON.parse(readFileSync(path.join(DATA_DIR, "scenarios_test.json"), "utf8"));
+
+/**
+ * Deterministic subset of n scenarios that keeps the same share of each
+ * (difficulty, escalate) group as the full set (largest-remainder allocation).
+ */
+function stratified(scenarios: Scenario[], n: number | undefined): Scenario[] {
+  if (!n || n >= scenarios.length) return scenarios;
+  const groups = new Map<string, Scenario[]>();
+  for (const s of scenarios) {
+    const key = `${s.difficulty ?? "standard"}/${s.expected.escalate}`;
+    groups.set(key, [...(groups.get(key) ?? []), s]);
+  }
+  const alloc = [...groups].map(([key, rows]) => {
+    const exact = (rows.length * n) / scenarios.length;
+    return { key, rows, take: Math.floor(exact), rem: exact - Math.floor(exact) };
+  });
+  let left = n - alloc.reduce((k, a) => k + a.take, 0);
+  for (const a of [...alloc].sort((x, y) => y.rem - x.rem)) if (left-- > 0) a.take++;
+  // Spread picks across each group (every k-th) rather than taking the first few.
+  const picked = new Set(alloc.flatMap((a) => Array.from({ length: a.take }, (_, i) => a.rows[Math.floor((i * a.rows.length) / a.take)].id)));
+  return scenarios.filter((s) => picked.has(s.id));
+}
+
+const train = QUICK ? allTrain.filter((s) => QUICK_IDS.includes(s.id)) : stratified(allTrain, intFlag("--train"));
+const test = stratified(allTest, intFlag("--test"));
 
 // ---------------------------------------------------------------------------
 // Strategies
@@ -693,6 +724,7 @@ async function main() {
     generated_at: new Date().toISOString(),
     quick: QUICK,
     train_scenarios: train.map((s) => s.id),
+    test_scenarios: test.map((s) => s.id),
     baselines: { plain_llm: summary(plainTrain), rules_only: summary(rulesTrain) },
     expert_reference: experts.map((e) => ({ id: e.id, score: e.score, metrics: e.metrics, prompt: e.prompt, settings: e.settings })),
     rounds,
