@@ -1,5 +1,13 @@
 import { MongoClient, Db, Collection } from "mongodb";
-import type { Reading, LogEntry, ManualChunk, ManualHit } from "./types";
+import type {
+  Reading,
+  LogEntry,
+  ManualChunk,
+  ManualHit,
+  Emergency,
+  TimelineEvent,
+  NotificationStatus,
+} from "./types";
 import { embed } from "./llm";
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
@@ -180,4 +188,93 @@ function cosine(a: number[], b: number[]): number {
   }
   if (na === 0 || nb === 0) return 0;
   return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+// ---- Emergencies ----
+
+export async function emergencies(): Promise<Collection<Emergency>> {
+  return (await getDb()).collection<Emergency>("emergencies");
+}
+
+export async function createEmergency(e: Emergency): Promise<void> {
+  const col = await emergencies();
+  await col.insertOne(e);
+}
+
+export async function getActiveEmergency(
+  plantId: string
+): Promise<Emergency | null> {
+  const col = await emergencies();
+  return col.findOne(
+    { plant_id: plantId, status: "active" },
+    { projection: { _id: 0 }, sort: { declared_at: -1 } }
+  );
+}
+
+export async function getEmergency(
+  incidentId: string
+): Promise<Emergency | null> {
+  const col = await emergencies();
+  return col.findOne({ incident_id: incidentId }, { projection: { _id: 0 } });
+}
+
+export async function listEmergencies(
+  plantId: string,
+  limit = 20
+): Promise<Emergency[]> {
+  const col = await emergencies();
+  return col
+    .find({ plant_id: plantId }, { projection: { _id: 0 } })
+    .sort({ declared_at: -1 })
+    .limit(limit)
+    .toArray();
+}
+
+export async function appendTimeline(
+  incidentId: string,
+  event: TimelineEvent
+): Promise<void> {
+  const col = await emergencies();
+  await col.updateOne(
+    { incident_id: incidentId },
+    { $push: { timeline: event } }
+  );
+}
+
+export async function acknowledgeAgency(
+  incidentId: string,
+  agencyId: string,
+  status: NotificationStatus = "acknowledged"
+): Promise<void> {
+  const col = await emergencies();
+  const now = new Date().toISOString();
+  await col.updateOne(
+    { incident_id: incidentId, "notifications.agency_id": agencyId },
+    {
+      $set: {
+        "notifications.$.status": status,
+        "notifications.$.acknowledged_at": now,
+      },
+    }
+  );
+}
+
+export async function standDownEmergency(
+  incidentId: string,
+  by: string,
+  resolution: string
+): Promise<void> {
+  const col = await emergencies();
+  const now = new Date().toISOString();
+  await col.updateOne(
+    { incident_id: incidentId },
+    {
+      $set: {
+        status: "stood_down",
+        stood_down_at: now,
+        stood_down_by: by,
+        resolution,
+      },
+    }
+  );
 }

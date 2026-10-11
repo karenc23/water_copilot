@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import EmergencyButton from "./components/EmergencyButton";
 
 interface DashboardData {
   latest?: { date: string; chlorine: number; turbidity: number; ph: number };
@@ -16,8 +17,15 @@ interface DashboardData {
   }[];
 }
 
+interface ActiveIncident {
+  incident_id: string;
+  severity: string;
+  advisory: { headline: string };
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [active, setActive] = useState<ActiveIncident | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +33,10 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(String(e)));
+    fetch("/api/emergency")
+      .then((r) => r.json())
+      .then((d) => setActive(d.active || null))
+      .catch(() => {});
   }, []);
 
   if (error)
@@ -48,7 +60,51 @@ export default function Dashboard() {
         chena-village-01 — what the plant remembers, at a glance.
       </p>
 
-      {data.safety?.escalate && (
+      {active ? (
+        <div className="incident-banner">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div>
+              <span className={`sev ${active.severity}`}>{active.severity}</span>{" "}
+              <strong>Active emergency — {active.advisory.headline}</strong>
+              <div className="muted">Incident {active.incident_id}</div>
+            </div>
+            <Link href="/emergency" className="pill danger">
+              open incident console →
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="card"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderColor: data.safety?.escalate
+              ? "rgba(248,113,113,0.5)"
+              : undefined,
+          }}
+        >
+          <div>
+            <strong>Emergency protocol</strong>
+            <div className="muted">
+              {data.safety?.escalate
+                ? "A health-critical condition is active. Declaring notifies agencies and issues a public advisory."
+                : "If the water supply is unsafe, declare an emergency to notify agencies and issue a public advisory."}
+            </div>
+          </div>
+          <EmergencyButton compact reason={data.safety?.reason} />
+        </div>
+      )}
+
+      {data.safety?.escalate && !active && (
         <div className="alert danger">
           <strong>Escalate now.</strong> {data.safety.reason}
         </div>
