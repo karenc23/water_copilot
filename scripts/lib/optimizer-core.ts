@@ -201,7 +201,8 @@ function createLimiter(max: number) {
       next();
     });
 }
-const limit = createLimiter(CONCURRENCY);
+/** One pool of CONCURRENCY slots for every LLM call in the process, so concurrent arms share it. */
+export const limit = createLimiter(CONCURRENCY);
 
 /** Rate limits, server errors, network errors and unparseable replies are worth retrying; config errors aren't. */
 function isRetryable(err: unknown): boolean {

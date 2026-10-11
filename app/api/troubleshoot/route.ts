@@ -1,4 +1,5 @@
 import { runTroubleshoot } from "@/lib/pipeline";
+import { withLiveLogbook } from "@/components/logbook-data";
 import { parseTroubleshootBody } from "@/lib/troubleshoot-input";
 import { readJSON } from "@/lib/validate";
 
@@ -11,7 +12,8 @@ import { readJSON } from "@/lib/validate";
  * { diagnosis, failure_mode, steps, tier, alerts, escalate, escalation_packet, warnings }.
  */
 export async function POST(request: Request) {
-  const parsed = await parseTroubleshootBody(await readJSON(request));
+  // The Keeper reads the live logbook (MongoDB, seed fallback) unless the request sends its own.
+  const parsed = await parseTroubleshootBody(await withLiveLogbook(await readJSON(request)));
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
 
   try {

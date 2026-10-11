@@ -1,4 +1,5 @@
 import { runTroubleshoot } from "@/lib/pipeline";
+import { withLiveLogbook } from "@/components/logbook-data";
 import { parseTroubleshootBody } from "@/lib/troubleshoot-input";
 import { diagnosticianEvent, governorEvent, keeperEvent, librarianEvent, sentinelEvent, type TraceEvent } from "@/lib/trace";
 import { readJSON } from "@/lib/validate";
@@ -10,7 +11,8 @@ import { readJSON } from "@/lib/validate";
  * courier (red only), then done with the full TroubleshootResponse — or error.
  */
 export async function POST(request: Request) {
-  const parsed = await parseTroubleshootBody(await readJSON(request));
+  // The Keeper reads the live logbook (MongoDB, seed fallback) unless the request sends its own.
+  const parsed = await parseTroubleshootBody(await withLiveLogbook(await readJSON(request)));
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
   const input = parsed.input;
 
@@ -34,7 +36,10 @@ export async function POST(request: Request) {
             alerts = a;
             send(sentinelEvent(a, input.readings, asOf));
             send(librarianEvent(a, input.manualText));
-            send(keeperEvent(input.logs, a, asOf));
+            // The Keeper's window ends at the newest reading or logbook entry, so an incident saved
+            // today is recalled even when the latest reading is older.
+            const keeperAsOf = [asOf, ...input.logs.map((l) => l.date)].filter((d): d is string => !!d).sort().at(-1);
+            send(keeperEvent(input.logs, a, keeperAsOf));
           },
           onModelStart: () => send({ type: "diagnostician_start" }),
           onModel: (llm, ms) => send(diagnosticianEvent(llm, ms, input.manualText)),

@@ -59,6 +59,10 @@ export default function DraftMessage({ packet, onClose }: { packet: EscalationPa
         onChange={(e) => setText(e.target.value)}
         rows={Math.min(24, text.split("\n").length + 2)}
         spellCheck
+        // Keep writing-assistant extensions from injecting markup into the draft.
+        data-gramm="false"
+        data-gramm_editor="false"
+        data-enable-grammarly="false"
         className="mt-2 block w-full resize-y rounded-xl border border-line-strong bg-night/60 p-4 font-mono text-base leading-relaxed text-ink focus:border-accent focus:outline-none"
       />
       <div className="mt-4 flex flex-wrap gap-3">

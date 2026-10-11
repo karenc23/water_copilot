@@ -3,12 +3,15 @@ import path from "node:path";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import ResultsChart from "@/components/ResultsChart";
+import { proofFromAgents, proofFromResults, type Proof } from "@/components/proof-data";
 import { parseResults, type Results, type Score, type Strategy } from "@/components/results-data";
 import Link from "next/link";
 import { Card, PageHeader, Spinner, buttonPrimary } from "@/components/ui";
 
 // RESULTS_FILE (env) points at another optimizer output, e.g. for a demo or a test fixture.
 const RESULTS_FILE = process.env.RESULTS_FILE || path.join(process.cwd(), "data", "results.json");
+// Written by scripts/optimize_agents.ts; when present (and not a dry run) it drives the headline.
+const AGENTS_FILE = path.join(process.cwd(), "data", "results_agents.json");
 
 export default function ResultsPage() {
   return (
@@ -35,7 +38,18 @@ function Loading() {
   );
 }
 
-type Loaded = { state: "ok"; results: Results } | { state: "missing" } | { state: "unreadable" };
+type Loaded = { state: "ok"; results: Results; proof: Proof | null } | { state: "missing" } | { state: "unreadable" };
+
+/** The headline: results_agents.json if it has a (non-dry) selection, else the same rule applied to results.json. */
+async function loadProof(resultsRaw: unknown): Promise<Proof | null> {
+  try {
+    const agents = proofFromAgents(JSON.parse(await readFile(AGENTS_FILE, "utf8")));
+    if (agents) return agents;
+  } catch {
+    // Not written yet, or mid-write: fall back to results.json.
+  }
+  return proofFromResults(resultsRaw);
+}
 
 async function loadResults(): Promise<Loaded> {
   let text: string;
@@ -45,7 +59,8 @@ async function loadResults(): Promise<Loaded> {
     return { state: "missing" };
   }
   try {
-    return { state: "ok", results: parseResults(JSON.parse(text)) };
+    const raw = JSON.parse(text);
+    return { state: "ok", results: parseResults(raw), proof: await loadProof(raw) };
   } catch {
     // Most likely the optimizer is mid-write.
     return { state: "unreadable" };
@@ -62,10 +77,12 @@ async function ResultsContent() {
   const r = loaded.results;
   const points = r.rounds.flatMap((rd) => (rd.best?.pct != null ? [{ round: rd.round, pct: rd.best.pct, id: rd.best.id }] : []));
   const rewrites = Math.max(r.rounds.length - 1, 0);
+  // The strategy picked by training score (proof-data.ts); only this one is highlighted.
+  const selectedId = loaded.proof?.source === "results.json" ? loaded.proof.selected.id : null;
 
   return (
     <div className="space-y-6">
-      <Headline baseline={r.test.baseline} evolved={r.test.best} single={r.test.single} count={r.test.count} />
+      <Headline proof={loaded.proof} />
       <Summary rewrites={rewrites} ours={r.test.best} expert={r.test.expert} />
 
       <Card
@@ -73,11 +90,25 @@ async function ResultsContent() {
         aside={<span className="text-base text-ink-muted">{r.test.count ? `${r.test.count} scenarios` : "Scenarios"} the optimizer never saw</span>}
       >
         {r.test.plain || r.test.rules || r.test.best ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {r.test.baseline && r.test.baseline.label !== "Plain LLM" && <BigNumber label={r.test.baseline.label} score={r.test.baseline} />}
             <BigNumber label="Plain LLM" score={r.test.plain} />
             <BigNumber label="Rules only" score={r.test.rules} />
             <BigNumber label="Expert prompt" score={r.test.expert} sub={r.test.expert?.id ?? undefined} />
-            <BigNumber label="Ours" score={r.test.best} highlight sub={r.test.best?.id ?? undefined} />
+            <BigNumber
+              label={r.test.single ? "Parallel run (A)" : "Ours"}
+              score={r.test.best}
+              highlight={!r.test.single || selectedId === r.test.best?.id}
+              sub={`${r.test.best?.id ?? ""}${selectedId === r.test.best?.id ? " · selected" : ""}`}
+            />
+            {r.test.single && (
+              <BigNumber
+                label="Single-agent run (B)"
+                score={r.test.single}
+                highlight={selectedId === r.test.single.id}
+                sub={`${r.test.single.id ?? ""}${selectedId === r.test.single.id ? " · selected" : ""}`}
+              />
+            )}
           </div>
         ) : (
           <p className="text-lg text-ink-muted">Test results aren’t in yet. They’re written when the run finishes.</p>
@@ -185,125 +216,72 @@ function pct(s: Score): string {
   return s.pct != null ? `${Math.round(s.pct)}%` : `${s.score} pts`;
 }
 
-/**
- * Baseline → Evolved on the unseen test set, the relative reduction in lost points
- * ((max − score) is the "error"), then the hard subset and the two safety rates.
- */
-function Headline({
-  baseline,
-  evolved,
-  single,
-  count,
-}: {
-  baseline: (Score & { label: string }) | null;
-  evolved: (Score & { id: string | null }) | null;
-  single: (Score & { id: string | null }) | null;
-  count: number | null;
-}) {
-  if (!baseline || !evolved) return null;
-  const bErr = baseline.max != null ? baseline.max - baseline.score : null;
-  const eErr = evolved.max != null ? evolved.max - evolved.score : null;
-  const reduction = bErr && eErr != null ? ((bErr - eErr) / bErr) * 100 : null;
-  const missed = (s: Score) => (s.metrics.escalation_recall != null ? 1 - s.metrics.escalation_recall : undefined);
-  const withCount = (r: string, n: number | undefined) => `${r}${n != null ? ` (${n})` : ""}`;
+const fewer = (base: { score: number; max: number }, fin: { score: number; max: number }) => {
+  const b = base.max - base.score;
+  const f = fin.max - fin.score;
+  return b > 0 ? ((b - f) / b) * 100 : null;
+};
+
+/** Generic → the evolved strategy picked by training score, on the unseen tests. */
+function Headline({ proof }: { proof: Proof | null }) {
+  if (!proof) return null;
+  const { baseline: b, selected: sel } = proof;
+  const red = fewer(b, sel.test);
+  const errWord = red === null ? "" : red >= 0 ? `${Math.round(red)}% fewer errors` : `${Math.round(-red)}% more errors`;
   const rows: { label: string; b: string; e: string }[] = [];
-  if (baseline.hard || evolved.hard) {
-    rows.push({
-      label: "Hard scenarios",
-      b: baseline.hard ? `${baseline.hard.score}/${baseline.hard.max}` : "—",
-      e: evolved.hard ? `${evolved.hard.score}/${evolved.hard.max}` : "—",
-    });
-  }
-  if (missed(baseline) != null || missed(evolved) != null) {
-    rows.push({
-      label: "Missed danger",
-      b: withCount(rate(missed(baseline)), baseline.metrics.missed_escalations),
-      e: withCount(rate(missed(evolved)), evolved.metrics.missed_escalations),
-    });
-  }
-  if (baseline.metrics.false_alarm_rate != null || evolved.metrics.false_alarm_rate != null) {
-    rows.push({
-      label: "False alarms",
-      b: withCount(rate(baseline.metrics.false_alarm_rate), baseline.metrics.false_alarms),
-      e: withCount(rate(evolved.metrics.false_alarm_rate), evolved.metrics.false_alarms),
-    });
-  }
+  if (b.hard && sel.test.hard) rows.push({ label: "Hard cases", b: `${b.hard.score}/${b.hard.max}`, e: `${sel.test.hard.score}/${sel.test.hard.max}` });
+  const rate = (r: number | null, n: number | null) => (r === null ? "—" : `${Math.round(r * 100)}%${n !== null ? ` (${n})` : ""}`);
+  rows.push({ label: "Missed danger", b: rate(b.missedRate, b.missed), e: rate(sel.test.missedRate, sel.test.missed) });
+  rows.push({ label: "False alarms", b: rate(b.falseAlarmRate, b.falseAlarms), e: rate(sel.test.falseAlarmRate, sel.test.falseAlarms) });
   return (
     <section className="glass glow-accent rounded-2xl p-5 md:p-7">
-      <h2 className="text-sm font-bold tracking-widest text-accent uppercase">Baseline → Evolved on unseen tests</h2>
-      <div className="mt-3 flex flex-wrap items-end gap-x-6 gap-y-3">
-        <div>
-          <div className="text-base font-semibold text-ink-muted">{baseline.label}</div>
-          <div className="text-6xl font-black tabular-nums text-ink-soft">{pct(baseline)}</div>
-          <div className="text-sm text-ink-muted tabular-nums">
-            {baseline.score}
-            {baseline.max != null && ` / ${baseline.max}`} points
-          </div>
-        </div>
-        <div aria-hidden className="pb-8 text-4xl text-accent">
-          →
-        </div>
-        <div>
-          <div className="text-base font-semibold text-accent">Evolved{evolved.id ? ` (${evolved.id})` : ""}</div>
-          <div className="text-6xl font-black tabular-nums text-white drop-shadow-[0_0_18px_rgba(94,234,212,0.6)]">{pct(evolved)}</div>
-          <div className="text-sm text-ink-muted tabular-nums">
-            {evolved.score}
-            {evolved.max != null && ` / ${evolved.max}`} points
-          </div>
-        </div>
-        {reduction != null && (
-          <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 sm:ml-auto sm:text-right">
-            <div className={`text-4xl font-black tabular-nums ${reduction >= 0 ? "text-accent" : "text-amber-200"}`}>
-              {reduction >= 0 ? `−${Math.round(reduction)}%` : `+${Math.round(-reduction)}%`}
-            </div>
-            <div className="text-sm text-ink-soft">{reduction >= 0 ? "relative error reduction" : "more errors than the baseline"}</div>
-            <div className="text-xs text-ink-faint tabular-nums">
-              points lost: {bErr} → {eErr}
-            </div>
-          </div>
+      <h2 className="text-sm font-bold tracking-widest text-accent uppercase">Generic → evolved on {proof.n || "the"} unseen scenarios</h2>
+      <p className="mt-3 text-3xl leading-tight font-black text-white md:text-4xl">
+        {b.score} → <span className="text-accent drop-shadow-[0_0_14px_rgba(94,234,212,0.6)]">{sel.test.score}</span>
+        {errWord && <span className="text-2xl font-bold text-ink md:text-3xl">, {errWord}</span>}
+        {b.hard && sel.test.hard && (
+          <span className="text-2xl font-bold text-ink md:text-3xl">
+            ; hard cases {b.hard.score} → {sel.test.hard.score}
+          </span>
         )}
-      </div>
-      {single && single.max != null && baseline.max != null && bErr ? (
-        <p className="mt-4 text-base text-ink-soft">
-          Single-agent run{single.id ? ` (${single.id})` : ""}: <span className="font-semibold text-ink">{pct(single)}</span> ({single.score} / {single.max}),{" "}
-          {(() => {
-            const r = ((bErr - (single.max - single.score)) / bErr) * 100;
-            return r >= 0 ? `${Math.round(r)}% fewer errors than the baseline.` : `${Math.round(-r)}% more errors than the baseline.`;
-          })()}{" "}
-          <Link href="/evolution" className="font-semibold text-accent underline underline-offset-4">
-            Compare the two runs →
-          </Link>
-        </p>
-      ) : null}
-      {rows.length > 0 && (
-        <table className="mt-5 w-full max-w-xl text-left text-base tabular-nums">
-          <thead className="text-sm text-ink-muted">
-            <tr>
-              <th className="py-1 pr-4 font-semibold">
-                <span className="sr-only">Measure</span>
+      </p>
+      <p className="mt-2 text-base text-ink-soft">
+        Points out of {sel.test.max} · evolved strategy: <span className="font-semibold text-ink">{sel.label}</span>
+        {sel.trainMax ? ` · train ${sel.trainScore}/${sel.trainMax}` : ""}
+      </p>
+      <p className="mt-1 text-sm text-ink-faint">
+        {proof.rule}{" "}
+        {proof.contenders.length > 1 &&
+          `Training scores: ${proof.contenders.map((c) => `${c.label} ${c.trainScore}${c.trainMax ? `/${c.trainMax}` : ""}`).join(", ")}.`}
+      </p>
+      <table className="mt-5 w-full max-w-xl text-left text-base tabular-nums">
+        <thead className="text-sm text-ink-muted">
+          <tr>
+            <th className="py-1 pr-4 font-semibold">
+              <span className="sr-only">Measure</span>
+            </th>
+            <th className="py-1 pr-4 font-semibold">Generic</th>
+            <th className="py-1 font-semibold text-accent">Evolved</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label} className="border-t border-line">
+              <th scope="row" className="py-2 pr-4 font-semibold text-ink-soft">
+                {row.label}
               </th>
-              <th className="py-1 pr-4 font-semibold">{baseline.label}</th>
-              <th className="py-1 font-semibold text-accent">Evolved</th>
+              <td className="py-2 pr-4 text-ink-soft">{row.b}</td>
+              <td className="py-2 font-semibold text-ink">{row.e}</td>
             </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.label} className="border-t border-line">
-                <th scope="row" className="py-2 pr-4 font-semibold text-ink-soft">
-                  {row.label}
-                </th>
-                <td className="py-2 pr-4 text-ink-soft">{row.b}</td>
-                <td className="py-2 font-semibold text-ink">{row.e}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {count != null && (
-        <p className="mt-3 text-sm text-ink-faint">
-          {count} test scenarios the optimizer never saw. Lower is better for missed danger and false alarms.
-        </p>
-      )}
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 text-sm text-ink-faint">
+        Scores are points on the unseen test scenarios (errors = points lost). Every run is compared below, including the ones that weren’t selected.{" "}
+        <Link href="/evolution" className="font-semibold text-accent underline underline-offset-4">
+          Compare the runs →
+        </Link>
+      </p>
     </section>
   );
 }

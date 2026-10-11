@@ -20,3 +20,17 @@ export async function loadLogs(): Promise<{ logs: LogEntry[]; source: LogSource 
   const logs = (logsSeed as LogEntry[]).filter((l) => l.plant_id === PLANT_ID).sort((a, b) => b.date.localeCompare(a.date));
   return { logs, source: "seed" };
 }
+
+/**
+ * For the troubleshoot routes: if the request didn't send its own logbook, use the live one
+ * (MongoDB, else seed), so the Keeper recalls incidents saved with "Save to logbook".
+ */
+export async function withLiveLogbook(body: unknown): Promise<unknown> {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const b = body as Record<string, unknown>;
+  if (b.logs !== undefined) return body;
+  const plant = typeof b.plant_id === "string" && b.plant_id.trim() ? b.plant_id : PLANT_ID;
+  if (plant !== PLANT_ID) return body;
+  const { logs } = await loadLogs();
+  return { ...b, logs };
+}

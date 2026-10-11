@@ -11,7 +11,7 @@
 | Story | scene holds ≥ 8 s (reading speed + 5 s hold) | laptop | ✅ |  |
 | Story | → arrow advances to scene 2 | laptop | ✅ |  |
 | Story | space advances to the team | laptop | ✅ |  |
-| Story | agent intros ≈ 1.5 s each | laptop | ✅ | 1521 ms |
+| Story | agent intros ≈ 1.5 s each | laptop | ✅ | 1493 ms |
 | Story | click advances | laptop | ✅ | Keeper → Diagnostician |
 | Layout | / story | laptop | ✅ |  |
 | Story | Enter → /troubleshoot | laptop | ✅ |  |
@@ -28,7 +28,7 @@
 | Click /logbook | checkbox “Escalated only” | laptop | ✅ |  |
 | Click /handoff | button “Generate handbook for new operator” | laptop | ✅ |  |
 | Click /results | link “Watch the agents evolve →” | laptop | ✅ | → /evolution |
-| Click /results | link “Compare the two runs →” | laptop | ✅ | → /evolution |
+| Click /results | link “Compare the runs →” | laptop | ✅ | → /evolution |
 | Click /results | summary “Show as a table” | laptop | ✅ |  |
 | Click /results | summary “Round 0 1 strategy best 82%” | laptop | ✅ |  |
 | Click /results | summary “Round 1 3 strategies best 85%” | laptop | ✅ |  |
@@ -68,8 +68,9 @@
 | Save to logbook | “Start from the recommended steps” fills the steps | laptop | ✅ |  |
 | Save to logbook | entry saved (POST /api/logs → MongoDB) | laptop | ✅ |  |
 | Save to logbook | entry appears in the Logbook | laptop | ✅ |  |
-| Logbook | search “filter 2” narrows the list | laptop | ✅ | 7 of 11 entries |
-| Logbook | “Escalated only” shows only escalated entries | laptop | ✅ | 4 of 11 entries (4/4 badged) |
+| Save to logbook | Keeper recalls the saved incident on the next question | laptop | ✅ |  |
+| Logbook | search “filter 2” narrows the list | laptop | ✅ | 5 of 9 entries |
+| Logbook | “Escalated only” shows only escalated entries | laptop | ✅ | 2 of 9 entries (2/2 badged) |
 | Logbook | no-match search shows an empty state | laptop | ✅ |  |
 | Handoff | handbook generated | laptop | ✅ |  |
 | Save to logbook | saved entry appears in a newly generated handbook | laptop | ✅ | cites 2026-10-11 |
@@ -107,7 +108,7 @@
 | Story | scene holds ≥ 8 s (reading speed + 5 s hold) | ipad | ✅ |  |
 | Story | → arrow advances to scene 2 | ipad | ✅ |  |
 | Story | space advances to the team | ipad | ✅ |  |
-| Story | agent intros ≈ 1.5 s each | ipad | ✅ | 1500 ms |
+| Story | agent intros ≈ 1.5 s each | ipad | ✅ | 1499 ms |
 | Story | click advances | ipad | ✅ | Keeper → Diagnostician |
 | Layout | / story | ipad | ✅ |  |
 | Story | Enter → /troubleshoot | ipad | ✅ |  |
@@ -124,7 +125,7 @@
 | Click /logbook | checkbox “Escalated only” | ipad | ✅ |  |
 | Click /handoff | button “Generate handbook for new operator” | ipad | ✅ |  |
 | Click /results | link “Watch the agents evolve →” | ipad | ✅ | → /evolution |
-| Click /results | link “Compare the two runs →” | ipad | ✅ | → /evolution |
+| Click /results | link “Compare the runs →” | ipad | ✅ | → /evolution |
 | Click /results | summary “Show as a table” | ipad | ✅ |  |
 | Click /results | summary “Round 0 1 strategy best 82%” | ipad | ✅ |  |
 | Click /results | summary “Round 1 3 strategies best 85%” | ipad | ✅ |  |

@@ -22,7 +22,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full md:flex">
+      {/* Browser extensions (e.g. Grammarly) add attributes to <body> before React hydrates;
+          this only silences that attribute mismatch on <body> itself, not on any children. */}
+      <body className="min-h-full md:flex" suppressHydrationWarning>
         {/* One fixed Arctic-night sky behind every page. */}
         <div aria-hidden className="no-print pointer-events-none fixed inset-0 -z-10">
           <Aurora />
