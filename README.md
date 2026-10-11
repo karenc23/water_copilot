@@ -1,190 +1,155 @@
-# water-copilot
+# Water Copilot
 
-An AI copilot for water treatment plant operators: troubleshooting help, a shared logbook, water-quality readings, and shift handoff notes.
+**A safety assistant and memory for the people who keep drinking water safe in remote Alaska villages, with self-improving AI agents behind it.**
 
-Built with Next.js (App Router), TypeScript, and Tailwind. The LLM is reached through an OpenAI-compatible API (Luminal), and data is stored in MongoDB.
+Water Copilot helps a village water plant operator troubleshoot problems from their plant's own manual. It escalates real health risks under safety rules the AI can't override, and it remembers every fix so knowledge stays when operators leave. Behind the scenes, DeepSeek agents on Luminal train on practice breakdowns. On 20 unseen scenarios they cut errors by **56%** compared with a generic prompt.
 
-## Getting started
+> ⚠️ Hackathon prototype. All plant data is synthetic (see [Data](#data)). It is not operating guidance for a real water system.
+
+---
+
+## The problem
+
+- In rural Alaska, safe drinking water often depends on **one or two local operators** per village.
+- Many village plants **lack a certified operator**, and turnover is high.
+- The state's Remote Maintenance Worker program supports roughly **190 communities**, so expert help can be days away.
+- When an experienced operator leaves, **what they knew about the plant leaves with them.**
+
+## What it does
+
+| Page | What it shows |
+|---|---|
+| **Story intro** (`/`) | The problem in three scenes, then the agents introduce themselves |
+| **Troubleshoot** | The operator describes a problem in plain words, the agents work it out live, and the answer fills in: danger level, steps citing the manual, and a drafted message to the expert |
+| **Plant Status** | Latest chlorine, turbidity and pH, 30-day charts with safe-range bands, and rule-based alerts |
+| **Plant Memory** | Every incident and fix, stored in MongoDB, searchable, with an "Escalated only" filter |
+| **Handoff Guide** | One click writes a "Welcome to this plant" guide for a new operator from the logbook |
+| **Proof** | Generic prompt vs. evolved strategy on unseen scenarios |
+| **Agent Evolution** | Replay of the training: each round's strategies, hypotheses, lineage and fixes |
+
+## How it works
+
+### The live team (runs on every question)
+
+| Agent | Job | Type |
+|---|---|---|
+| 🛰️ **Sentinel** | Checks readings against fixed rules (out-of-range values, chlorine falling 3 days in a row, …) | Code |
+| 📖 **Librarian** | Pulls the relevant manual sections | Code |
+| 🗂️ **Keeper** | Recalls this plant's past incidents from MongoDB | Code + database |
+| 🧠 **Diagnostician** | Proposes a diagnosis, failure mode and steps citing the manual | **AI** (DeepSeek-V4.1-Flash on Luminal) |
+| 🛡️ **Governor** | Sets the final danger level and removes invented doses and fake citations | Code |
+| 📝 **Courier** | Drafts the message to the expert from a template, for the operator to copy, download or email | Code |
+
+**The safety rule:** the final danger level is the **highest** of Sentinel's alerts, the failure mode's fixed tier, and the AI's own call. **The AI can raise the alarm but never lower it.** On red, "Contact your Remote Maintenance Worker" is always step 1. The app **never sends anything itself.** A human decides.
+
+### The training team (self-improving loop)
+
+A **strategy** is the Diagnostician's hidden instructions plus settings (what context it reads first, step limit, reasoning on or off).
+
+Each round:
+1. **Explorer agents** propose new strategies. In the parallel arm, three specialists run at once: *Threshold* (counts and limits), *Words* (danger stated only in the operator's description) and *History* (logbook patterns). A **Synthesizer** merges their fixes.
+2. The **Judge** scores every strategy on 20 training scenarios through the real pipeline (rules → AI → safety layer), running evaluations in parallel.
+3. The **Critic** reads the failures and writes a shared lesson for the next round.
+4. The best strategy survives.
+
+**Scoring:** points for the correct escalation decision, exact danger tier, failure mode and expected steps. **Missing a health risk carries the largest penalty**, and false alarms are penalized too, so a strategy can't win by escalating everything.
+
+**Selection rule:** the final strategy is the one with the best **training** score across all runs. It is **never chosen by test score.**
+
+## Results
+
+On 20 held-out test scenarios never used during optimization (max 220; error change is relative to the generic prompt):
+
+| Strategy | Train (/222) | Test-20 (/220) | Test-20 hard (/66) |
+|---|---|---|---|
+| Generic prompt (baseline) | 167 | 179 | 53 |
+| Parallel multi-agent best | 204 | 193 (−34% errors) | 52 |
+| Single-agent best (fresh run) | 205 | 195 (−39% errors) | 61 |
+| **★ b3, selected by training score** | **215** | **202 (−56% errors)** | **60** |
+| Hand-written expert prompt (reference) | 188 | 206 | 62 |
+
+- **Concurrency:** evaluating scenarios in parallel was **4.06× faster** than one at a time (measured: 13.2 s vs. 3.2 s on 5 scenarios).
+- **Reproducibility:** b3 scored 214/222 on training originally and 215/222 when re-scored.
+- **Parallel vs. single agent:** with the same budget, the specialist parallel arm explored more but a single agent combining fixes in one lineage scored higher on training, so that's what the selection rule kept.
+- **The expert prompt** was written by us with knowledge of the scenarios. It scores slightly higher on test but lower on training, where it missed escalations, so the selection rule doesn't pick it.
+
+## Data
+
+Everything is **synthetic**. Real village plant logs aren't public, and measuring improvement requires scenarios with known correct answers. Safe ranges are based on EPA drinking-water standards.
+
+| File | Contents |
+|---|---|
+| `data/manual.md` | Fictional operator manual with numbered sections |
+| `data/failure_modes.json` | Failure modes (F1–F13) with fixed danger tiers |
+| `data/readings_seed.json` | 30 days of chlorine, turbidity and pH, including a slow chlorine drift |
+| `data/logs_seed.json` | Past incidents, seeded into MongoDB |
+| `data/scenarios_train.json` / `scenarios_test.json` | Labeled breakdown scenarios; about half are deliberately hard (danger only in words, logbook recurrences, broken instruments) |
+| `data/results*.json` | Optimizer outputs that the Proof and Agent Evolution pages read |
+
+## Tech stack
+
+- **Next.js** (App Router, TypeScript) + **Tailwind**, **Recharts**, **framer-motion**
+- **DeepSeek-V4.1-Flash** via **Luminal Cloud** (OpenAI-compatible API)
+- **MongoDB Atlas** for the logbook, with a JSON fallback
+- Optimizer scripts in TypeScript, run with `tsx`
+
+## Run it
 
 ```bash
 npm install
-cp .env.example .env   # fill in the values
-npm run seed           # load data/readings_seed.json and data/logs_seed.json into MongoDB
+cp .env.example .env   # then fill in the values below
+npm run seed           # loads the seed logbook into MongoDB (safe to repeat)
 npm run dev            # http://localhost:3000
 ```
 
-`npm run seed` is safe to re-run: readings are upserted on `(plant_id, date)`, logs on `(plant_id, date, problem)`.
-
-### Environment variables
-
-| Variable           | Purpose                                      |
-| ------------------ | -------------------------------------------- |
-| `LUMINAL_BASE_URL` | Base URL of the Luminal OpenAI-compatible API |
-| `LUMINAL_API_KEY`  | Luminal API key                              |
-| `LUMINAL_MODEL`    | Model name to request                        |
-| `LUMINAL_REASONING_EFFORT` | `none` (default), `low`, `medium`, `high` |
-| `MONGODB_URI`      | MongoDB connection string                    |
-| `MONGODB_DB`       | Database name (default `water-copilot`)      |
-
-`.env` is gitignored. Never commit real keys.
-
-## Project structure
-
+`.env`:
 ```
-app/
-  page.tsx              Home dashboard
-  troubleshoot/         Troubleshooting assistant
-  logbook/              Operator log entries
-  readings/             Chlorine / turbidity / pH readings
-  handoff/              Shift handoff notes
-  results/              Evaluation results against scenarios
-  api/
-    troubleshoot/       POST: problem -> diagnosis, steps, escalate?
-    readings/           GET ?plant_id= / POST a reading
-    logs/               GET ?plant_id= / POST a log entry
-    handoff/            POST: generate a handoff note
-components/             Shared UI
-lib/
-  llm.ts                OpenAI SDK client pointed at Luminal
-  db.ts                 MongoDB client
-  agents.ts             Agent logic (troubleshoot, handoff)
-  rules.ts              Deterministic alerts from readings and the logbook
-  safety.ts             Final tier, step filtering, dose checks
-  pipeline.ts           rules → LLM → safety, plus the escalation packet
-  validate.ts           Runtime validation for request bodies and seed data
-scripts/seed.ts         Seeds MongoDB from data/readings_seed.json and data/logs_seed.json
-scripts/try-scenarios.ts  Runs training scenarios through the pipeline, prints result vs expected
-types/index.ts          Shared TypeScript types for the data formats below
-optimize/               Standalone Python script (separate from the web app)
-data/                   Sample data and test scenarios
+LUMINAL_BASE_URL=https://flash.luminal.cloud/v1
+LUMINAL_API_KEY=your-key
+LUMINAL_MODEL=deepseek-ai/DeepSeek-V4.1-Flash
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB=water-copilot
 ```
 
-## Troubleshoot API
+If `MONGODB_URI` is empty or unreachable, the app falls back to the seed files.
 
-`POST /api/troubleshoot` runs **rules → LLM → safety**:
-
-1. **Rules** ([lib/rules.ts](lib/rules.ts), no LLM): `checkReadings` flags out-of-range values on the latest reading (thresholds from manual Section 1.2) and chlorine falling or turbidity rising 3 days in a row. `checkLogs` flags the manual's escalation conditions in the logbook: the same problem 3+ times in 30 days, or 2+ failed backwashes in 7 days.
-2. **LLM** ([lib/agents.ts](lib/agents.ts)): one-sentence diagnosis, a failure mode from [data/failure_modes.json](data/failure_modes.json), and up to 5 steps citing manual sections. Capped at 700 tokens with reasoning off (`LUMINAL_REASONING_EFFORT`); invalid JSON is retried once.
-3. **Safety** ([lib/safety.ts](lib/safety.ts), no LLM): `finalTier` takes the highest of the alert tiers, the failure mode's tier, and the model's escalation call, so the model can raise the tier but never lower it. It drops steps that cite sections not in the manual, flags every dose, and removes doses not in the manual. On red, code puts "Contact your Remote Maintenance Worker now (Manual §X)" first.
-
-The escalation packet is built by code from a template ([lib/pipeline.ts](lib/pipeline.ts)), never written by the LLM. It contains the operator's own words, recent readings, alerts, steps from the logbook, and the app's suggestions, which are labeled "NOT yet done".
-
-Request (readings and logs currently come from `data/*_seed.json`; the manual is `data/manual.md`):
-
-```json
-{ "description": "Chlorine keeps dropping", "plant_id": "plant-a" }
-```
-
-Response:
-
-```json
-{
-  "diagnosis": "One sentence.",
-  "failure_mode": "F4",
-  "steps": [{ "action": "...", "manual_section": "3.2", "source": "safety | llm", "flags": ["dose: 5%"] }],
-  "tier": "green | yellow | red",
-  "alerts": [{ "rule_id": "CL_FALLING", "tier": "yellow", "parameter": "chlorine", "message": "...", "manual_section": "3.5" }],
-  "escalate": true,
-  "escalation_packet": { "message": "...", "operator_report": "...", "steps_reported_done": [], "steps_recommended": [] },
-  "warnings": ["Dropped step citing nonexistent section 9.9: ..."]
-}
-```
-
-Try it on training scenarios: `npm run try-scenarios` (or `npm run try-scenarios -- train-05 train-18`).
-
-## Team ownership
-
-| Area                                  | Paths                                      | Owner |
-| ------------------------------------- | ------------------------------------------ | ----- |
-| Frontend pages and UI                 | `app/*/page.tsx`, `components/`            | TBD   |
-| API routes and database               | `app/api/`, `lib/db.ts`                    | TBD   |
-| LLM and agents                        | `lib/llm.ts`, `lib/agents.ts`              | TBD   |
-| Optimization script                   | `optimize/`                                | TBD   |
-| Data and scenarios                    | `data/`                                    | TBD   |
-
-## Data formats
-
-All dates are ISO 8601 strings (`YYYY-MM-DD`). The TypeScript definitions live in [`types/index.ts`](types/index.ts).
-
-### Reading
-
-```json
-{
-  "plant_id": "plant-a",
-  "date": "2026-10-01",
-  "chlorine": 1.2,
-  "turbidity": 0.3,
-  "ph": 7.4
-}
-```
-
-| Field       | Type   | Notes                     |
-| ----------- | ------ | ------------------------- |
-| `plant_id`  | string |                           |
-| `date`      | string | ISO 8601                  |
-| `chlorine`  | number | Residual chlorine, mg/L   |
-| `turbidity` | number | NTU                       |
-| `ph`        | number |                           |
-
-### Log entry
-
-```json
-{
-  "plant_id": "plant-a",
-  "date": "2026-10-02",
-  "operator": "J. Doe",
-  "problem": "Chlorine residual below target",
-  "steps_taken": ["Checked chlorinator feed rate", "Increased dose 10%"],
-  "outcome": "Residual did not recover",
-  "escalated": false
-}
-```
-
-| Field         | Type     |
-| ------------- | -------- |
-| `plant_id`    | string   |
-| `date`        | string   |
-| `operator`    | string   |
-| `problem`     | string   |
-| `steps_taken` | string[] |
-| `outcome`     | string   |
-| `escalated`   | boolean  |
-
-### Scenario
-
-Test cases used by `optimize/` and the `/results` page, stored as arrays in `data/scenarios_train.json` and `data/scenarios_test.json`.
-
-```json
-{
-  "id": "example-001",
-  "description": "Chlorine residual dropping over three days with rising turbidity.",
-  "readings": [ /* Reading[] */ ],
-  "log_history": [ /* LogEntry[] */ ],
-  "expected": {
-    "diagnosis": "...",
-    "escalate": true,
-    "key_steps": ["..."]
-  }
-}
-```
-
-| Field                | Type       |
-| -------------------- | ---------- |
-| `id`                 | string     |
-| `description`        | string     |
-| `readings`           | Reading[]  |
-| `log_history`        | LogEntry[] |
-| `expected.diagnosis` | string     |
-| `expected.escalate`  | boolean    |
-| `expected.key_steps` | string[]   |
-
-See [`data/scenarios/example.json`](data/scenarios/example.json) for a full example.
-
-## Optimization script
+### Reproduce the training results
 
 ```bash
-cd optimize
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python optimize.py
+npm run try-scenarios     # run a few scenarios through the live pipeline
+npm run optimize          # parallel vs. single-agent optimizer
+npm run optimize:agents   # specialist Explorers + Synthesizer vs. single agent
 ```
+
+## Repo layout
+
+```
+app/                 pages and API routes (troubleshoot stream, logs, handoff, …)
+components/          UI, including the Agent Room and live answer
+lib/rules.ts         Sentinel: deterministic alert rules
+lib/agents.ts        Diagnostician: the LLM call
+lib/safety.ts        Governor: final tier, citation and dose checks
+lib/llm.ts, db.ts    Luminal client and MongoDB access
+scripts/             optimizers, seeding, scenario runner
+data/                manual, failure modes, readings, logbook, scenarios, results
+qa-screenshots/      screenshots from the automated click-through QA
+```
+
+## Limitations
+
+- **Synthetic data** and a small test set (20 scenarios); scores vary a few points between runs.
+- The evolved strategy reasons before answering, so it takes about 9 s per answer vs. about 2 s for the original prompt.
+- Sentinel's "same problem 3 times in 30 days" rule counts from the readings history, so a newly saved logbook entry is recalled by the Keeper but doesn't trigger that alert yet.
+- It doesn't contact anyone. It drafts messages for a human to send.
+
+## What's next
+
+- Pilot with real operators and real logbooks, with community permission
+- **Offline mode:** the rule-based safety layer already runs without AI; add a small on-device model for villages with unreliable internet
+- Voice notes so experienced operators can record plant quirks before they leave
+- Chemical supply tracking timed to barge and flight deliveries
+- A multi-plant view for remote experts
+
+---
+
+*Built in one day at a hackathon. Synthetic data only; not for operating a real water system.*
