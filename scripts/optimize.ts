@@ -1,18 +1,24 @@
 // Prompt/settings optimizer for the troubleshoot pipeline (rules → LLM → safety).
 //
-// Usage: npx tsx scripts/optimize.ts          (40 train scenarios, 4 rounds, 20 test)
-//        npx tsx scripts/optimize.ts --quick  (5 hard train scenarios, 1 round)
-//        npx tsx scripts/optimize.ts --train 20 --rounds 3 --test 10
+// Usage: npx tsx scripts/optimize.ts          (20 train scenarios, A 3×3 vs B 1×9, all 20 test)
+//        npx tsx scripts/optimize.ts --quick  (5 hard train scenarios, A 1×3 vs B 1×3)
+//        flags: --train N --test N --rounds-a N --rounds-b N --budget-min N --out FILE
 //          (subsets are stratified by difficulty and escalation, so the mix stays the same)
 //        npx tsx scripts/optimize.ts --rescore-test
 //          (no rounds: re-score baselines, best expert and r3-s1 from results.json on all test scenarios)
 //
-// Round 0 scores one deliberately generic strategy on data/scenarios_train.json.
-// Each later round asks a critic LLM call for 3 new strategies, based on the current
-// best strategy's 5 worst-scored scenarios. Three hand-written strategies are scored
-// alongside as an "expert reference" but are never candidates for best.
-// data/scenarios_test.json is only used at the end, for the final comparison.
-// Results go to data/results.json (data/results_quick.json with --quick).
+// Round 0 scores one deliberately generic strategy (r0-generic) on the train set. It is the
+// shared root of two arms with the same candidate budget, train set, evaluator and seed:
+//   A (parallel): each round, three critic agents with different hypotheses and settings
+//     (LANES) improve the best-so-far at the same time → 3 children per round.
+//   B (single agent): one child per round, each built from the previous child's failures.
+// Every child records its parent, hypothesis, targeted failed scenarios and a one-sentence
+// change; when it is scored, the feedback hit rate says how many targets now pass.
+// Three hand-written strategies are scored as an "expert reference", never as candidates.
+// data/scenarios_test.json is only used at the end: every strategy is scored on all test
+// scenarios, and the earlier 10-scenario test set is reported as a subset of that run.
+// Results go to data/results_v2.json, copied over data/results.json once the run completes
+// (data/results_quick.json with --quick, no copy).
 import "dotenv/config"; // load .env before anything reads process.env
 import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -1137,8 +1143,10 @@ async function main() {
   const hitB = hitRate(B);
   console.log(`Feedback hit rate: A ${hitA.now_pass}/${hitA.targets} (${fmtPct(hitA.hit_rate)}) · B ${hitB.now_pass}/${hitB.targets} (${fmtPct(hitB.hit_rate)})`);
 
-  const threshold = Math.min(A.best.score, B.best.score);
-  const reach = (arm: Arm) => arm.trace.find((p) => p.best_score >= threshold) ?? null;
+  // Time/candidates each arm needed to reach each final score above the baseline (the higher one = best found by either).
+  const thresholds = [...new Set([A.best.score, B.best.score])].filter((t) => t > root.score).sort((a, b) => b - a);
+  const reach = (arm: Arm, t: number) => arm.trace.find((p) => p.best_score >= t) ?? null;
+  const reachCell = (p: TracePoint | null) => (p ? `${p.seconds.toFixed(0)} s (${p.candidates} cands)` : "never");
   console.log(`\n${"=".repeat(118)}\n3. PARALLELISM: equal budget (${A.candidates.length} vs ${B.candidates.length} candidates), same train set, evaluator and seed\n${"=".repeat(118)}`);
   console.log(`${"cands".padEnd(7)}${"A best so far".padEnd(26)}B best so far`);
   const maxN = Math.max(A.trace.length, B.trace.length);
@@ -1146,16 +1154,15 @@ async function main() {
     const cell = (p: TracePoint | undefined) => (p ? `${p.best_score} @ ${p.seconds.toFixed(0)} s` : "");
     console.log(`${String(i).padEnd(7)}${cell(A.trace[i]).padEnd(26)}${cell(B.trace[i])}`);
   }
-  const rA = reach(A);
-  const rB = reach(B);
   console.log(
     `\n${"".padEnd(30)}${"A parallel".padEnd(22)}B single\n` +
       `${"final best (train)".padEnd(30)}${`${A.best.score} (${A.best.id})`.padEnd(22)}${B.best.score} (${B.best.id})\n` +
       `${"final best (test)".padEnd(30)}${fmtSub(sub(aT.results, all)).padEnd(22)}${fmtSub(sub(bT.results, all))}\n` +
       `${"wall-clock".padEnd(30)}${`${A.seconds.toFixed(0)} s`.padEnd(22)}${B.seconds.toFixed(0)} s\n` +
-      `${"  of which critic calls".padEnd(30)}${`${A.critic_seconds.toFixed(0)} s`.padEnd(22)}${B.critic_seconds.toFixed(0)} s\n` +
-      `${`time to reach ${threshold}`.padEnd(30)}${(rA ? `${rA.seconds.toFixed(0)} s (${rA.candidates} cands)` : "never").padEnd(22)}${rB ? `${rB.seconds.toFixed(0)} s (${rB.candidates} cands)` : "never"}`,
+      `${"  of which critic calls".padEnd(30)}${`${A.critic_seconds.toFixed(0)} s`.padEnd(22)}${B.critic_seconds.toFixed(0)} s` +
+      thresholds.map((t) => `\n${`time to reach ${t}`.padEnd(30)}${reachCell(reach(A, t)).padEnd(22)}${reachCell(reach(B, t))}`).join(""),
   );
+  if (!thresholds.length) console.log(`Neither arm beat the baseline (${root.score}) on train.`);
   console.log(`Scenario-evaluation concurrency: ×${speed.speedup.toFixed(2)} (${speed.sequential_s.toFixed(1)} s one at a time vs ${speed.concurrent_s.toFixed(1)} s with ${CONCURRENCY} at once, ${speed.scenarios.length} scenarios)`);
 
   // 6. Save. Every field the UI reads from results.json is kept; A is the main run ("rounds", "best_strategy", "test.best").
@@ -1169,7 +1176,7 @@ async function main() {
     test_score: testRun.metrics.score,
     test_max: testRun.metrics.max_score,
     trace: arm.trace,
-    time_to_threshold: { threshold, reached: arm === A ? rA : rB },
+    time_to_reach: thresholds.map((t) => ({ score: t, reached: reach(arm, t) })),
     feedback: hitRate(arm),
   });
   const testEntry = (run: { results: ScenarioResult[]; metrics: Metrics }, extra: object = {}) => ({ ...extra, ...summary(run), scenarios: run.results.map(compactScenario) });
