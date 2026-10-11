@@ -1,0 +1,49 @@
+{
+  "problem": "Given a plant's readings and an operator's plain-language report, decide whether to escalate to the Remote Maintenance Worker. Missed health risks are penalized 5x a false escalation.",
+  "max_score": 24.0,
+  "baseline": {
+    "label": "Plain LLM: escalate only on very low chlorine",
+    "score": -6.0,
+    "missed_health_risks": 4
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "strategy": "Round 1: chlorine band + turbidity (Rules 1A/1B)",
+      "training_score": 8.0,
+      "escalation_accuracy": 0.75,
+      "missed_health_risks": 2,
+      "critic_flagged": [
+        "train-05",
+        "train-06",
+        "train-11"
+      ]
+    },
+    {
+      "round": 2,
+      "strategy": "Round 2: + pH band (Page 5)",
+      "training_score": 15.0,
+      "escalation_accuracy": 0.833,
+      "missed_health_risks": 1,
+      "critic_flagged": [
+        "train-05",
+        "train-11"
+      ]
+    },
+    {
+      "round": 3,
+      "strategy": "Round 3: + gas leak & recurring problems (Pages 3D/7)",
+      "training_score": 24.0,
+      "escalation_accuracy": 1.0,
+      "missed_health_risks": 0,
+      "critic_flagged": []
+    }
+  ],
+  "final_test": {
+    "strategy": "Round 3: + gas leak & recurring problems (Pages 3D/7)",
+    "score": 6.0,
+    "escalation_accuracy": 1.0,
+    "missed_health_risks": 0,
+    "n_scenarios": 3
+  }
+}
