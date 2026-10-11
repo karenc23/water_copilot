@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { troubleshoot } from "@/lib/agents";
+import { runTroubleshoot } from "@/lib/pipeline";
 import { parseLog, parseReading, readJSON } from "@/lib/validate";
 import type { LogEntry, Reading } from "@/types";
 
@@ -16,6 +16,9 @@ async function loadSeed<T>(file: string): Promise<T[]> {
  * POST { description, plant_id?, readings?, logs? }
  * plant_id defaults to "plant-a". readings/logs default to that plant's rows in
  * data/readings_seed.json and data/logs_seed.json. The manual is data/manual.md.
+ *
+ * Runs rules → LLM → safety and returns
+ * { diagnosis, failure_mode, steps, tier, alerts, escalate, escalation_packet, warnings }.
  */
 export async function POST(request: Request) {
   const body = await readJSON(request);
@@ -61,7 +64,9 @@ export async function POST(request: Request) {
   const manualText = await readFile(path.join(DATA_DIR, "manual.md"), "utf8");
 
   try {
-    return Response.json(await troubleshoot(b.description, readings, logs, manualText));
+    return Response.json(
+      await runTroubleshoot({ plant_id: plantId, description: b.description, readings, logs, manualText }),
+    );
   } catch (err) {
     console.error("troubleshoot failed", err);
     return Response.json({ error: "Troubleshooting model request failed" }, { status: 502 });

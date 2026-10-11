@@ -1,74 +1,70 @@
 import type OpenAI from "openai";
-import { chatJSON, LLMParseError } from "@/lib/llm";
+import { chatJSON, LLMParseError, type ChatOptions } from "@/lib/llm";
+import { FAILURE_MODES, getFailureMode, type Alert } from "@/lib/rules";
 import type { LogEntry, Reading } from "@/types";
 
 // ---------------------------------------------------------------------------
-// Troubleshoot
+// Troubleshoot (LLM step only — lib/safety.ts has the final say)
 // ---------------------------------------------------------------------------
+
+export const MAX_STEPS = 5;
+export const MAX_STEP_WORDS = 25;
+const MAX_TOKENS = 700;
+// Reasoning tokens count toward MAX_TOKENS. With this ~4k-token prompt even "low"
+// reasoning fills the 700-token cap before any JSON is written, so default to off.
+// The retry always turns it off so a reply cut off by the cap still gets an answer.
+const REASONING_EFFORT = (process.env.LUMINAL_REASONING_EFFORT || "none") as ChatOptions["reasoning_effort"];
 
 export interface TroubleshootStep {
   action: string;
-  /** Manual section number the step comes from (e.g. "3.2"); null only if the model gave none. */
+  /** Manual section number the step comes from (e.g. "3.2"); null if the model gave none. */
   manual_section: string | null;
 }
 
 export interface TroubleshootResult {
   diagnosis: string;
+  /** Failure mode id from data/failure_modes.json, or null if missing/unknown. */
+  failure_mode: string | null;
   steps: TroubleshootStep[];
+  /** The model's own escalation call. It can raise the final tier, never lower it. */
   escalate: boolean;
-  /** Message for the supervisor; null when escalate is false. */
-  escalation_message: string | null;
-  /** Notes from the safety checks below (forced escalation, redacted amounts). */
+  health_risk: boolean;
   warnings: string[];
 }
 
-/**
- * Health-risk thresholds checked against the latest reading. Any breach forces
- * escalation regardless of what the model says. Defaults follow EPA drinking
- * water limits; confirm against your plant's permit.
- */
-export const HEALTH_LIMITS = {
-  chlorine_min: 0.2, // mg/L — residual below this may mean inadequate disinfection
-  chlorine_max: 4.0, // mg/L — EPA maximum residual disinfectant level
-  turbidity_max: 1.0, // NTU — EPA treatment technique limit
-  ph_min: 6.5,
-  ph_max: 8.5,
-};
+const FAILURE_MODE_LIST = FAILURE_MODES.map(
+  (f) => `${f.id} [${f.tier}] ${f.name} (Manual ${f.manual_section}): ${f.description}`,
+).join("\n");
 
 const SYSTEM_PROMPT = `You are a troubleshooting assistant for water treatment plant operators.
 
 Rules you must follow:
-1. Only use guidance from the MANUAL. Every step must come from the manual and cite the section number it comes from in "manual_section" (e.g. "3.2"). Do not add steps the manual doesn't support. If the manual doesn't cover the situation, say so in the diagnosis and escalate.
-2. Never invent chemical doses. Only use doses, feed rates, concentrations, or quantities that appear verbatim in the MANUAL. Never estimate an amount. If the manual doesn't give one, say "see manual / ask supervisor for amount".
-3. If there is ANY possible risk to public health (inadequate disinfection, high turbidity, disinfectant overdose, contamination, pH out of range, equipment failure affecting treatment), set "health_risk": true and "escalate": true.
-4. Also escalate if previous log entries show the same problem was not resolved, or if the fix is beyond operator authority.
-5. If you escalate, write "escalation_message": a short message to the shift supervisor stating plant, problem, key readings, and what has been tried. Otherwise null.
+1. Only use guidance from the MANUAL. Every step must come from the manual and cite its section number in "manual_section" (e.g. "3.2"). If the manual doesn't cover the situation, say so and escalate.
+2. Never invent chemical doses. Only use amounts that appear verbatim in the MANUAL.
+3. If there is ANY possible risk to public health, set "health_risk": true and "escalate": true. Also escalate if the logbook shows the same problem 3+ times in 30 days or two failed backwashes.
+4. "diagnosis" is ONE sentence. Give at most ${MAX_STEPS} steps, most important first, each under ${MAX_STEP_WORDS} words.
+5. Choose the single best "failure_mode" id from this list:
+${FAILURE_MODE_LIST}
 
 Respond with ONLY a JSON object, no prose:
-{
-  "diagnosis": string,
-  "steps": [{ "action": string, "manual_section": string }],
-  "health_risk": boolean,
-  "escalate": boolean,
-  "escalation_message": string | null
-}`;
+{"diagnosis": string, "failure_mode": string, "steps": [{"action": string, "manual_section": string}], "health_risk": boolean, "escalate": boolean}`;
 
 export async function troubleshoot(
   description: string,
   readings: Reading[],
   logs: LogEntry[],
   manualText: string,
+  alerts: Alert[] = [],
 ): Promise<TroubleshootResult> {
   const warnings: string[] = [];
-  const healthFlags = checkHealthLimits(readings);
-
   const userPrompt = [
     `PROBLEM DESCRIPTION:\n${description}`,
-    `RECENT READINGS (chlorine mg/L, turbidity NTU):\n${JSON.stringify(readings, null, 2)}`,
-    `RECENT LOG ENTRIES:\n${JSON.stringify(logs, null, 2)}`,
-    manualText.trim()
-      ? `MANUAL:\n<<<\n${manualText}\n>>>`
-      : "MANUAL: (none provided — do not give any amounts, and cite null for every step)",
+    `RECENT READINGS (chlorine mg/L, turbidity NTU):\n${JSON.stringify(readings)}`,
+    `RECENT LOG ENTRIES:\n${JSON.stringify(logs)}`,
+    alerts.length
+      ? `AUTOMATED ALERTS:\n${alerts.map((a) => `- [${a.tier}] ${a.message} (Manual ${a.manual_section})`).join("\n")}`
+      : "AUTOMATED ALERTS: none",
+    manualText.trim() ? `MANUAL:\n<<<\n${manualText}\n>>>` : "MANUAL: (none provided)",
   ].join("\n\n");
 
   const parsed = await askWithRetry([
@@ -76,58 +72,44 @@ export async function troubleshoot(
     { role: "user", content: userPrompt },
   ]);
   if (!parsed) {
-    warnings.push("Model returned invalid JSON twice; escalating by default.");
     return {
       diagnosis: "Automated diagnosis unavailable.",
+      failure_mode: null,
       steps: [],
       escalate: true,
-      escalation_message: buildEscalationMessage(description, readings, healthFlags),
-      warnings: [...warnings, ...healthFlags],
+      health_risk: true,
+      warnings: ["Model returned invalid JSON twice; escalating by default."],
     };
   }
 
-  // Rule: never invent doses. Redact any amount that isn't in the manual
-  // (or simply restating a reading).
-  const allowed = allowedNumbers(manualText, readings);
-  const redact = (text: string) => {
-    const { text: out, removed } = redactUnknownAmounts(text, allowed);
-    for (const r of removed) warnings.push(`Removed amount "${r}" — not found in the manual.`);
-    return out;
+  let failure_mode = parsed.failure_mode;
+  if (failure_mode && !getFailureMode(failure_mode)) {
+    warnings.push(`Model chose unknown failure mode "${failure_mode}".`);
+    failure_mode = null;
+  }
+  if (parsed.steps.length > MAX_STEPS) {
+    warnings.push(`Model gave ${parsed.steps.length} steps; kept the first ${MAX_STEPS}.`);
+  }
+  const steps = parsed.steps.slice(0, MAX_STEPS);
+  for (const s of steps) {
+    const words = s.action.split(/\s+/).filter(Boolean).length;
+    if (words > MAX_STEP_WORDS) warnings.push(`Step is ${words} words: "${s.action}"`);
+  }
+
+  return {
+    diagnosis: parsed.diagnosis,
+    failure_mode,
+    steps,
+    escalate: parsed.escalate,
+    health_risk: parsed.health_risk,
+    warnings,
   };
-  const diagnosis = redact(parsed.diagnosis);
-  const sections = manualSections(manualText);
-  const steps = parsed.steps.map((s) => {
-    const section = manualText.trim() ? s.manual_section : null;
-    if (!section) {
-      warnings.push(`Step cites no manual section: "${s.action}"`);
-    } else if (!sections.has(section)) {
-      warnings.push(`Step cites section ${section}, which isn't in the manual: "${s.action}"`);
-    }
-    return { action: redact(s.action), manual_section: section };
-  });
-
-  // Rule: always escalate possible health risks.
-  let escalate = parsed.escalate || parsed.health_risk;
-  if (healthFlags.length > 0) {
-    if (!escalate) warnings.push("Escalation forced by health-limit check.");
-    warnings.push(...healthFlags);
-    escalate = true;
-  }
-
-  let escalation_message: string | null = null;
-  if (escalate) {
-    escalation_message = parsed.escalation_message
-      ? redact(parsed.escalation_message)
-      : buildEscalationMessage(description, readings, healthFlags);
-  }
-
-  return { diagnosis, steps, escalate, escalation_message, warnings };
 }
 
 /**
  * Call the model and validate the reply. If it isn't valid JSON in the expected
- * shape, show the model its reply and ask once more. Returns null if both fail.
- * API/config errors propagate.
+ * shape (including a reply cut off by max_tokens), show the model its reply and
+ * ask once more with reasoning off. Returns null if both fail. API/config errors propagate.
  */
 async function askWithRetry(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
@@ -135,7 +117,11 @@ async function askWithRetry(
   for (let attempt = 0; attempt < 2; attempt++) {
     let reply: string;
     try {
-      const raw = await chatJSON(messages);
+      const raw = await chatJSON(messages, {
+        max_tokens: MAX_TOKENS,
+        reasoning_effort: attempt === 0 ? REASONING_EFFORT : "none",
+        label: attempt === 0 ? "troubleshoot" : "troubleshoot-retry",
+      });
       const parsed = coerceResult(raw);
       if (parsed) return parsed;
       reply = JSON.stringify(raw);
@@ -145,22 +131,15 @@ async function askWithRetry(
     }
     messages = [
       ...messages,
-      { role: "assistant", content: reply },
+      { role: "assistant", content: reply || "(empty reply)" },
       {
         role: "user",
         content:
-          "That was not valid JSON in the required format. Reply again with ONLY the JSON object: diagnosis (string), steps (array of {action, manual_section}), health_risk (boolean), escalate (boolean), escalation_message (string or null).",
+          "That was not valid JSON in the required format. Reply again with ONLY the JSON object: diagnosis (one sentence), failure_mode (id), steps (at most 5 of {action, manual_section}), health_risk (boolean), escalate (boolean). Keep it short.",
       },
     ];
   }
   return null;
-}
-
-/** Section numbers defined in the manual, e.g. "3.2" from "**3.2 Low residual". */
-function manualSections(manualText: string): Set<string> {
-  const out = new Set<string>();
-  for (const m of manualText.matchAll(/(?:^|\*\*|#\s*)(\d+(?:\.\d+)+)\b/gm)) out.add(m[1]);
-  return out;
 }
 
 /** Normalize "Section 3.2 Low residual" / "§3.2" to "3.2". */
@@ -169,79 +148,12 @@ function sectionNumber(v: unknown): string | null {
   return String(v).match(/\d+(?:\.\d+)+/)?.[0] ?? null;
 }
 
-function latestReading(readings: Reading[]): Reading | undefined {
-  return readings.reduce<Reading | undefined>(
-    (latest, r) => (!latest || r.date > latest.date ? r : latest),
-    undefined,
-  );
-}
-
-function checkHealthLimits(readings: Reading[]): string[] {
-  const r = latestReading(readings);
-  if (!r) return [];
-  const L = HEALTH_LIMITS;
-  const flags: string[] = [];
-  if (r.chlorine < L.chlorine_min)
-    flags.push(`Chlorine ${r.chlorine} mg/L is below ${L.chlorine_min} mg/L (${r.date}).`);
-  if (r.chlorine > L.chlorine_max)
-    flags.push(`Chlorine ${r.chlorine} mg/L is above ${L.chlorine_max} mg/L (${r.date}).`);
-  if (r.turbidity > L.turbidity_max)
-    flags.push(`Turbidity ${r.turbidity} NTU is above ${L.turbidity_max} NTU (${r.date}).`);
-  if (r.ph < L.ph_min || r.ph > L.ph_max)
-    flags.push(`pH ${r.ph} is outside ${L.ph_min}–${L.ph_max} (${r.date}).`);
-  return flags;
-}
-
-function buildEscalationMessage(
-  description: string,
-  readings: Reading[],
-  healthFlags: string[],
-): string {
-  const r = latestReading(readings);
-  const parts = [`Escalation needed${r ? ` at ${r.plant_id}` : ""}: ${description}`];
-  if (r) {
-    parts.push(
-      `Latest reading (${r.date}): chlorine ${r.chlorine} mg/L, turbidity ${r.turbidity} NTU, pH ${r.ph}.`,
-    );
-  }
-  parts.push(...healthFlags);
-  return parts.join(" ");
-}
-
-// Number followed by a dose/volume/mass/rate unit, e.g. "2.5 mg/L", "10 lb/day", "15%".
-const AMOUNT_RE =
-  /(\d+(?:\.\d+)?)\s*(mg\/l|ppm|ppb|ml|l|liters?|litres?|gal(?:lons?)?|lbs?|pounds?|kg|g|grams?|oz|%|percent)(?:\s*\/\s*(?:day|hr|hour|min|d|h))?(?![a-z])/gi;
-
-function allowedNumbers(manualText: string, readings: Reading[]): Set<number> {
-  const nums = new Set<number>();
-  for (const m of manualText.matchAll(/\d+(?:\.\d+)?/g)) nums.add(parseFloat(m[0]));
-  for (const r of readings) {
-    nums.add(r.chlorine);
-    nums.add(r.turbidity);
-    nums.add(r.ph);
-  }
-  return nums;
-}
-
-function redactUnknownAmounts(
-  text: string,
-  allowed: Set<number>,
-): { text: string; removed: string[] } {
-  const removed: string[] = [];
-  const out = text.replace(AMOUNT_RE, (match, num: string) => {
-    if (allowed.has(parseFloat(num))) return match;
-    removed.push(match);
-    return "[amount not in manual — confirm with supervisor]";
-  });
-  return { text: out, removed };
-}
-
 interface RawResult {
   diagnosis: string;
+  failure_mode: string | null;
   steps: TroubleshootStep[];
   health_risk: boolean;
   escalate: boolean;
-  escalation_message: string | null;
 }
 
 function coerceResult(raw: unknown): RawResult | null {
@@ -251,7 +163,7 @@ function coerceResult(raw: unknown): RawResult | null {
   const steps: TroubleshootStep[] = [];
   for (const s of o.steps) {
     if (typeof s === "string") {
-      steps.push({ action: s, manual_section: null });
+      steps.push({ action: s, manual_section: sectionNumber(s) });
     } else if (s && typeof s === "object" && typeof (s as { action?: unknown }).action === "string") {
       steps.push({
         action: (s as { action: string }).action,
@@ -259,16 +171,14 @@ function coerceResult(raw: unknown): RawResult | null {
       });
     }
   }
+  const fm = typeof o.failure_mode === "string" ? o.failure_mode.trim().toUpperCase() : "";
   return {
     diagnosis: o.diagnosis,
+    failure_mode: fm.match(/F\d+/)?.[0] ?? null,
     steps,
     // Anything other than an explicit false counts as true — fail safe.
     health_risk: o.health_risk !== false,
     escalate: o.escalate === true,
-    escalation_message:
-      typeof o.escalation_message === "string" && o.escalation_message.trim()
-        ? o.escalation_message
-        : null,
   };
 }
 

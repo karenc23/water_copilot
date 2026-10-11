@@ -22,6 +22,7 @@ npm run dev            # http://localhost:3000
 | `LUMINAL_BASE_URL` | Base URL of the Luminal OpenAI-compatible API |
 | `LUMINAL_API_KEY`  | Luminal API key                              |
 | `LUMINAL_MODEL`    | Model name to request                        |
+| `LUMINAL_REASONING_EFFORT` | `none` (default), `low`, `medium`, `high` |
 | `MONGODB_URI`      | MongoDB connection string                    |
 | `MONGODB_DB`       | Database name (default `water-copilot`)      |
 
@@ -47,8 +48,12 @@ lib/
   llm.ts                OpenAI SDK client pointed at Luminal
   db.ts                 MongoDB client
   agents.ts             Agent logic (troubleshoot, handoff)
+  rules.ts              Deterministic alerts from readings and the logbook
+  safety.ts             Final tier, step filtering, dose checks
+  pipeline.ts           rules → LLM → safety, plus the escalation packet
   validate.ts           Runtime validation for request bodies and seed data
 scripts/seed.ts         Seeds MongoDB from data/readings_seed.json and data/logs_seed.json
+scripts/try-scenarios.ts  Runs training scenarios through the pipeline, prints result vs expected
 types/index.ts          Shared TypeScript types for the data formats below
 optimize/               Standalone Python script (separate from the web app)
 data/                   Sample data and test scenarios
@@ -56,38 +61,36 @@ data/                   Sample data and test scenarios
 
 ## Troubleshoot API
 
-`POST /api/troubleshoot`
+`POST /api/troubleshoot` runs **rules → LLM → safety**:
+
+1. **Rules** ([lib/rules.ts](lib/rules.ts), no LLM): `checkReadings` flags out-of-range values on the latest reading (thresholds from manual Section 1.2) and chlorine falling or turbidity rising 3 days in a row. `checkLogs` flags the manual's escalation conditions in the logbook: the same problem 3+ times in 30 days, or 2+ failed backwashes in 7 days.
+2. **LLM** ([lib/agents.ts](lib/agents.ts)): one-sentence diagnosis, a failure mode from [data/failure_modes.json](data/failure_modes.json), and up to 5 steps citing manual sections. Capped at 700 tokens with reasoning off (`LUMINAL_REASONING_EFFORT`); invalid JSON is retried once.
+3. **Safety** ([lib/safety.ts](lib/safety.ts), no LLM): `finalTier` takes the highest of the alert tiers, the failure mode's tier, and the model's escalation call, so the model can raise the tier but never lower it. It drops steps that cite sections not in the manual, flags every dose, and removes doses not in the manual. On red, code puts "Contact your Remote Maintenance Worker now (Manual §X)" first.
+
+The escalation packet is built by code from a template ([lib/pipeline.ts](lib/pipeline.ts)), never written by the LLM. It contains the operator's own words, recent readings, alerts, steps from the logbook, and the app's suggestions, which are labeled "NOT yet done".
+
+Request (readings and logs currently come from `data/*_seed.json`; the manual is `data/manual.md`):
 
 ```json
-{
-  "plant_id": "plant-b",
-  "description": "Chlorine residual keeps dropping",
-  "readings": [],      // optional: defaults to the plant's last 30 readings in MongoDB
-  "logs": [],          // optional: defaults to the plant's last 20 log entries
-  "manual_text": "..." // optional: defaults to data/manual.md
-}
+{ "description": "Chlorine keeps dropping", "plant_id": "plant-a" }
 ```
 
 Response:
 
 ```json
 {
-  "diagnosis": "...",
-  "steps": [{ "action": "...", "manual_section": "4.2 Chlorine Feed" }],
+  "diagnosis": "One sentence.",
+  "failure_mode": "F4",
+  "steps": [{ "action": "...", "manual_section": "3.2", "source": "safety | llm", "flags": ["dose: 5%"] }],
+  "tier": "green | yellow | red",
+  "alerts": [{ "rule_id": "CL_FALLING", "tier": "yellow", "parameter": "chlorine", "message": "...", "manual_section": "3.5" }],
   "escalate": true,
-  "escalation_message": "...",
-  "warnings": ["..."]
+  "escalation_packet": { "message": "...", "operator_report": "...", "steps_reported_done": [], "steps_recommended": [] },
+  "warnings": ["Dropped step citing nonexistent section 9.9: ..."]
 }
 ```
 
-### Safety rules
-
-The model is told both rules, and `lib/agents.ts` also enforces them in code:
-
-- **No invented doses.** Any amount with a dose/volume/mass unit (`mg/L`, `ppm`, `lb`, `gal`, `%`, ...) in the diagnosis, steps, or escalation message whose number doesn't appear in the manual (or in the readings) is replaced with `[amount not in manual — confirm with supervisor]`. With no manual, every amount is removed and every `manual_section` is `null`.
-- **Always escalate possible health risks.** Escalation is forced if the model reports a health risk, or if the latest reading breaches `HEALTH_LIMITS`: chlorine below 0.2 or above 4.0 mg/L, turbidity above 1.0 NTU, pH outside 6.5–8.5. These defaults follow EPA limits; confirm them against your plant's permit. If the model's reply can't be parsed, the result escalates by default.
-
-Every forced change is listed in `warnings`.
+Try it on training scenarios: `npm run try-scenarios` (or `npm run try-scenarios -- train-05 train-18`).
 
 ## Team ownership
 
