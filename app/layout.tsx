@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import Aurora from "@/components/agents/Aurora";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,8 +23,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full md:flex">
+        {/* One fixed Arctic-night sky behind every page. */}
+        <div aria-hidden className="no-print pointer-events-none fixed inset-0 -z-10">
+          <Aurora />
+        </div>
         <Nav />
-        <main className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8">
+        <main className="relative min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8">
           <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>
       </body>

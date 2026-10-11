@@ -227,7 +227,7 @@ function narrate(e: TraceEvent): Bubble | null {
                   <li key={i} className="flex items-start gap-2">
                     <Chip color={TIER_GLOW[a.tier]}>{TIER_WORD[a.tier]}</Chip>
                     <span className="text-slate-300">
-                      {a.message} <span className="text-slate-400">· §{a.manual_section}</span>
+                      {a.message} <span className="text-ink-faint">· §{a.manual_section}</span>
                     </span>
                   </li>
                 ))}
@@ -382,6 +382,8 @@ function gapAfter(e: TraceEvent, all: TraceEvent[], replay: boolean, reduced: bo
 
 export default function AgentRoom() {
   const [description, setDescription] = useState("");
+  const [asked, setAsked] = useState("");
+  const [hint, setHint] = useState<string | null>(null);
   const [events, setEvents] = useState<TraceEvent[]>([]);
   const [shown, setShown] = useState(0);
   const [runId, setRunId] = useState(0);
@@ -432,7 +434,12 @@ export default function AgentRoom() {
   }, [done, reduced]);
 
   const run = useCallback(async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      setHint("Describe what’s happening first: what you see, hear or measured.");
+      return;
+    }
+    setHint(null);
+    setAsked(text);
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
@@ -530,7 +537,7 @@ export default function AgentRoom() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-[#040a17] text-white shadow-xl ring-1 ring-white/10">
+      <div className="relative overflow-hidden rounded-2xl bg-night text-white ring-1 ring-accent/25 shadow-[0_0_60px_-20px_rgba(94,234,212,0.45)]">
         <Aurora />
 
         {/* Prompt */}
@@ -548,29 +555,41 @@ export default function AgentRoom() {
             <textarea
               id="agent-description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setHint(null);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(description);
               }}
+              aria-describedby={hint ? "agent-description-hint" : undefined}
               rows={2}
               placeholder="e.g. Chlorine dropped to 0.4 this morning and the feed pump sounds different"
-              className="min-h-14 flex-1 resize-y rounded-xl border border-white/20 bg-white/5 p-3 text-lg text-white placeholder:text-slate-400 focus:border-teal-300 focus:outline-none"
+              className="min-h-14 flex-1 resize-y rounded-xl border border-white/20 bg-white/5 p-3 text-lg text-white placeholder:text-ink-faint focus:border-teal-300 focus:outline-none"
             />
             <button
               type="submit"
-              disabled={!description.trim() || busy}
+              disabled={busy}
               className="min-h-14 shrink-0 rounded-xl bg-teal-300 px-6 text-lg font-bold text-[#04121f] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? "Agents working…" : "Wake the agents"}
             </button>
           </div>
+          {hint && (
+            <p id="agent-description-hint" role="alert" className="mt-2 text-base font-semibold text-amber-200">
+              {hint}
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap gap-2">
             {EXAMPLES.map((ex) => (
               <button
                 key={ex}
                 type="button"
                 disabled={busy}
-                onClick={() => setDescription(ex)}
+                onClick={() => {
+                  setDescription(ex);
+                  setHint(null);
+                }}
                 className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-left text-sm text-slate-200 hover:bg-white/10 disabled:opacity-50"
               >
                 {ex}
@@ -714,7 +733,7 @@ export default function AgentRoom() {
           {/* Narration feed */}
           <div className="relative border-t border-white/10 lg:border-t-0 lg:border-l">
             <div ref={feedRef} className="max-h-96 space-y-3 overflow-y-auto p-4 lg:absolute lg:inset-0 lg:max-h-none" aria-live="polite">
-              {!bubbles.length && <p className="text-sm text-slate-400">Each agent will explain what it did here, in plain words.</p>}
+              {!bubbles.length && <p className="text-sm text-ink-faint">Each agent will explain what it did here, in plain words.</p>}
               <AnimatePresence initial={false}>
                 {bubbles.map(({ i, b }) => {
                   const a = AGENT[b.agent];
@@ -753,15 +772,15 @@ export default function AgentRoom() {
               transition={{ type: "spring", stiffness: 120, damping: 20 }}
               className="space-y-6"
             >
-              <ResultView result={done.result} />
+              <ResultView result={done.result} description={asked} />
             </motion.div>
           )}
         </AnimatePresence>
         {error && (
-          <div role="alert" className="rounded-xl border-2 border-slate-800 bg-white p-5">
-            <p className="text-xl font-bold text-slate-900">Couldn’t get a diagnosis</p>
-            <p className="mt-1 text-lg text-slate-700">{error.error}</p>
-            <p className="mt-3 text-base text-slate-700">
+          <div role="alert" className="rounded-xl border-2 border-line-strong bg-glass p-5">
+            <p className="text-xl font-bold text-ink">Couldn’t get a diagnosis</p>
+            <p className="mt-1 text-lg text-ink-soft">{error.error}</p>
+            <p className="mt-3 text-base text-ink-soft">
               Follow the manual. If you think health could be at risk, contact your Remote Maintenance Worker now (Manual §8.1).
             </p>
           </div>

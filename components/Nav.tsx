@@ -20,14 +20,14 @@ export default function Nav() {
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
-    <nav className="bg-[#0f1c2e] text-white md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col">
-      <div className="px-5 pt-5 pb-3 md:pt-7 md:pb-6">
-        <div className="text-xl font-bold tracking-tight">Water Copilot</div>
-        <div className="mt-1 text-sm leading-snug text-slate-300">
-          Plant A
-          <span className="block text-slate-400">Fictional village water plant</span>
-        </div>
-      </div>
+    <nav className="no-print sticky top-0 z-40 border-b border-line bg-night/70 text-ink backdrop-blur-xl md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-r md:border-b-0">
+      <Link href="/" className="flex items-center gap-3 px-5 pt-5 pb-3 md:pt-7 md:pb-6" title="Replay the story intro">
+        <span aria-hidden className="relative size-9 shrink-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,#fff_0%,#5eead4_35%,#4338ca_100%)] shadow-[0_0_22px_rgba(94,234,212,0.55)]" />
+        <span>
+          <span className="block text-xl font-bold tracking-tight">Water Copilot</span>
+          <span className="block text-sm leading-snug text-ink-muted">Plant A · fictional village</span>
+        </span>
+      </Link>
       <ul className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible md:pb-0">
         {links.map((l) => {
           const active = isActive(l.href);
@@ -37,7 +37,9 @@ export default function Nav() {
                 href={l.href}
                 aria-current={active ? "page" : undefined}
                 className={`flex min-h-12 items-center gap-3 whitespace-nowrap rounded-lg px-3 text-base font-medium transition-colors ${
-                  active ? "bg-white text-[#0f1c2e]" : "text-slate-200 hover:bg-white/10"
+                  active
+                    ? "glow-accent border border-accent/50 bg-accent/15 text-white"
+                    : "border border-transparent text-ink-soft hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <svg viewBox="0 0 24 24" className="size-5 shrink-0" fill="currentColor" aria-hidden>
@@ -49,7 +51,7 @@ export default function Nav() {
           );
         })}
       </ul>
-      <p className="mt-auto hidden px-5 pb-5 text-xs leading-relaxed text-slate-400 md:block">
+      <p className="mt-auto hidden px-5 pb-5 text-xs leading-relaxed text-ink-faint md:block">
         Demo data only. Not for operating a real water system.
       </p>
     </nav>

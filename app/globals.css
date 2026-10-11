@@ -1,15 +1,51 @@
 @import "tailwindcss";
 
-/* Light-only on purpose: an operator tablet in a bright plant room. High contrast, calm neutrals.
-   Green / yellow / red are reserved for safety tiers (see components/tier.tsx). */
+/* Arctic night: one dark theme for the whole app, shared with the story intro and the agent canvases.
+   Text tokens keep high contrast on --night (ink-faint is still above 5:1).
+   Green / yellow / red are reserved for safety tiers (components/tier.tsx). */
 :root {
-  --background: #f3f5f8;
-  --foreground: #0f172a;
+  --night: #040a17;
+  --night-raised: #0a1528;
+  --ink: #f1f5f9;
+  --ink-soft: #d6deea;
+  --ink-muted: #aab7c9;
+  --ink-faint: #8a97ab;
+  --glass: rgb(148 178 220 / 0.07);
+  --glass-strong: rgb(148 178 220 / 0.14);
+  --line: rgb(186 206 235 / 0.16);
+  --line-strong: rgb(186 206 235 / 0.32);
+  --accent: #5eead4;
+  --accent-strong: #2dd4bf;
+  --accent-ink: #04121f;
+  --aurora-teal: #2dd4bf;
+  --aurora-sky: #7dd3fc;
+  --aurora-violet: #a5b4fc;
+  --aurora-green: #4ade80;
+  --glow-accent: 0 0 0 1px rgb(94 234 212 / 0.35), 0 0 28px -6px rgb(94 234 212 / 0.55);
+  --background: var(--night);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-night: var(--night);
+  --color-night-raised: var(--night-raised);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-aurora-teal: var(--aurora-teal);
+  --color-aurora-sky: var(--aurora-sky);
+  --color-aurora-violet: var(--aurora-violet);
+  --color-aurora-green: var(--aurora-green);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -17,7 +53,7 @@
 html {
   /* Large base size for a tablet; every rem-based Tailwind size scales with it. */
   font-size: 18px;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -28,8 +64,29 @@ body {
 
 /* Keep focus obvious for gloved or keyboard use. */
 :focus-visible {
-  outline: 3px solid #1d4ed8;
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Frosted-glass surface with a faint top highlight. */
+@utility glass {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 18px 40px -24px rgb(0 0 0 / 0.8);
+}
+
+/* Glowing accent edge, e.g. for the highlighted card or a focused field. */
+@utility glow-accent {
+  border-color: rgb(94 234 212 / 0.55);
+  box-shadow: var(--glow-accent);
+}
+
+@media print {
+  html { color-scheme: light; }
+  body { background: #fff; color: #000; }
+  nav, .no-print { display: none !important; }
 }
 
 /* ---- Agent Room / Evolution / story intro: Arctic-night aurora (components/agents/Aurora.tsx) ---- */

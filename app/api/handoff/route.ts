@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { chat, type ChatOptions } from "@/lib/llm";
+import { loadLogs } from "@/components/logbook-data";
 import { checkLogs, checkReadings } from "@/lib/rules";
 import type { LogEntry, Reading } from "@/types";
 
@@ -29,7 +30,8 @@ A 2–3 sentence summary of the plant and what matters most right now.
 /**
  * POST → { markdown }
  * Sends plant-a's logbook, readings and the manual to the LLM and returns a new-operator handbook.
- * Data comes from the seed files, like /api/troubleshoot.
+ * Readings and the manual come from data/ (like /api/troubleshoot); the logbook is the live one in
+ * MongoDB, so entries saved from Troubleshoot show up (seed file if the database is down).
  */
 export async function POST() {
   let readings: Reading[];
@@ -38,11 +40,11 @@ export async function POST() {
   try {
     const [r, l, m] = await Promise.all([
       readFile(path.join(DATA_DIR, "readings_seed.json"), "utf8"),
-      readFile(path.join(DATA_DIR, "logs_seed.json"), "utf8"),
+      loadLogs(),
       readFile(path.join(DATA_DIR, "manual.md"), "utf8"),
     ]);
     readings = (JSON.parse(r) as Reading[]).filter((x) => x.plant_id === PLANT_ID).sort((a, b) => a.date.localeCompare(b.date));
-    logs = (JSON.parse(l) as LogEntry[]).filter((x) => x.plant_id === PLANT_ID).sort((a, b) => a.date.localeCompare(b.date));
+    logs = [...l.logs].sort((a, b) => a.date.localeCompare(b.date));
     manual = m;
   } catch (err) {
     console.error("handoff: failed to load plant data", err);

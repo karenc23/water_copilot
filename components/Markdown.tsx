@@ -82,8 +82,8 @@ function inline(text: string): ReactNode[] {
     if (m.index > last) out.push(text.slice(last, m.index));
     const tok = m[0];
     const k = out.length;
-    if (tok.startsWith("**") || tok.startsWith("__")) out.push(<strong key={k} className="font-semibold text-slate-900">{tok.slice(2, -2)}</strong>);
-    else if (tok.startsWith("`")) out.push(<code key={k} className="rounded bg-slate-100 px-1 font-mono text-[0.9em]">{tok.slice(1, -1)}</code>);
+    if (tok.startsWith("**") || tok.startsWith("__")) out.push(<strong key={k} className="font-semibold text-ink">{tok.slice(2, -2)}</strong>);
+    else if (tok.startsWith("`")) out.push(<code key={k} className="rounded bg-glass-strong px-1 font-mono text-[0.9em]">{tok.slice(1, -1)}</code>);
     else out.push(<em key={k}>{tok.slice(1, -1)}</em>);
     last = m.index + tok.length;
   }
@@ -93,28 +93,28 @@ function inline(text: string): ReactNode[] {
 
 export default function Markdown({ source }: { source: string }) {
   return (
-    <div className="space-y-4 text-lg leading-relaxed text-slate-800">
+    <div className="space-y-4 text-lg leading-relaxed text-ink">
       {parse(source).map((b, i) => {
         switch (b.kind) {
           case "h":
-            if (b.level === 1) return <h2 key={i} className="text-3xl font-bold tracking-tight text-slate-900">{inline(b.text)}</h2>;
+            if (b.level === 1) return <h2 key={i} className="text-3xl font-bold tracking-tight text-ink">{inline(b.text)}</h2>;
             if (b.level === 2)
               return (
-                <h3 key={i} className="border-b-2 border-slate-200 pt-4 pb-1 text-2xl font-bold text-slate-900">
+                <h3 key={i} className="border-b-2 border-line pt-4 pb-1 text-2xl font-bold text-ink">
                   {inline(b.text)}
                 </h3>
               );
-            return <h4 key={i} className="pt-2 text-xl font-semibold text-slate-900">{inline(b.text)}</h4>;
+            return <h4 key={i} className="pt-2 text-xl font-semibold text-ink">{inline(b.text)}</h4>;
           case "p":
             return <p key={i}>{inline(b.text)}</p>;
           case "quote":
             return (
-              <blockquote key={i} className="border-l-4 border-slate-400 bg-slate-50 px-4 py-2 text-slate-800">
+              <blockquote key={i} className="border-l-4 border-line-strong bg-glass px-4 py-2 text-ink">
                 {inline(b.text)}
               </blockquote>
             );
           case "hr":
-            return <hr key={i} className="border-slate-200" />;
+            return <hr key={i} className="border-line" />;
           case "list": {
             const Tag = b.ordered ? "ol" : "ul";
             return (

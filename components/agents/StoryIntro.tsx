@@ -9,21 +9,38 @@ import Aurora from "@/components/agents/Aurora";
 import { AGENTS, RING_POS } from "@/components/agents/meta";
 
 // Landing: three short scenes, then the six agents introduce themselves one by one.
+// Lines appear at reading speed, each scene holds ~5 s once fully shown, scenes crossfade over 1.2 s.
 
 const SCENES: string[][] = [
   ["A fictional village of 320 people.", "−30°F.", "One water operator."],
   ["The nearest expert covers 190 communities.", "When operators leave, what they knew leaves too."],
 ];
 
-const SCENE_MS = [5200, 6200];
-const TEAM_TITLE_MS = 2600;
-const AGENT_MS = 2600;
+const FADE_S = 1.2; // crossfade between scenes
+const LINE_S = 0.9; // one line's fade-in
+const WORD_MS = 280; // reading speed: ~3.5 words per second
+const HOLD_MS = 5000; // time on screen after the last line appears
+const TEAM_TITLE_MS = 2200;
+const AGENT_MS = 1500;
 
-const line = {
-  hidden: { opacity: 0, y: 24, filter: "blur(6px)" },
-  show: (i: number) => ({ opacity: 1, y: 0, filter: "blur(0px)", transition: { delay: 0.3 + i * 1.1, duration: 0.9, ease: [0.2, 0.7, 0.2, 1] as const } }),
-  exit: { opacity: 0, y: -16, transition: { duration: 0.5 } },
-};
+const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
+
+/** Seconds after the scene starts when each line begins to appear: the previous line has been read first. */
+function lineDelays(lines: string[]): number[] {
+  const out: number[] = [];
+  let t = FADE_S * 0.6;
+  for (const l of lines) {
+    out.push(t);
+    t += LINE_S + (words(l) * WORD_MS) / 1000;
+  }
+  return out;
+}
+
+/** Total time a text scene stays up: every line revealed and read, then the hold. */
+function sceneMs(lines: string[]): number {
+  const d = lineDelays(lines);
+  return (d.at(-1)! + LINE_S) * 1000 + words(lines.at(-1)!) * WORD_MS + HOLD_MS;
+}
 
 export default function StoryIntro() {
   const router = useRouter();
@@ -38,11 +55,11 @@ export default function StoryIntro() {
 
   useEffect(() => {
     if (scene < 2) {
-      const id = setTimeout(() => setScene((s) => s + 1), SCENE_MS[scene]);
+      const id = setTimeout(() => setScene((s) => s + 1), sceneMs(SCENES[scene]));
       return () => clearTimeout(id);
     }
     if (intro < AGENTS.length) {
-      const id = setTimeout(() => setIntro((i) => i + 1), intro === -1 ? TEAM_TITLE_MS : AGENT_MS);
+      const id = setTimeout(() => setIntro((i) => i + 1), intro === -1 ? FADE_S * 1000 + TEAM_TITLE_MS : AGENT_MS);
       return () => clearTimeout(id);
     }
   }, [scene, intro]);
@@ -69,10 +86,10 @@ export default function StoryIntro() {
   const orbState = (i: number): OrbState => (teamDone ? "done" : i === intro ? "active" : i < intro ? "done" : "idle");
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden text-white" onClick={advance}>
+    <div className="fixed inset-0 z-50 cursor-pointer overflow-hidden text-white" onClick={advance}>
       <Aurora />
 
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-3 md:top-6 md:right-6">
+      <div className="absolute top-4 right-4 z-30 md:top-6 md:right-6">
         <Link
           href="/troubleshoot"
           onClick={(e) => e.stopPropagation()}
@@ -82,26 +99,28 @@ export default function StoryIntro() {
         </Link>
       </div>
 
-      <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-2" aria-hidden>
+      <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2" role="progressbar" aria-label="Story progress" aria-valuemin={1} aria-valuemax={3} aria-valuenow={scene + 1}>
         {[0, 1, 2].map((i) => (
-          <span key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === scene ? "w-8 bg-teal-300" : "w-1.5 bg-white/30"}`} />
+          <span key={i} className={`h-1.5 rounded-full transition-all duration-700 ${i === scene ? "w-8 bg-teal-300" : i < scene ? "w-1.5 bg-teal-300/60" : "w-1.5 bg-white/30"}`} />
         ))}
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         {scene < 2 ? (
           <motion.div
             key={`scene-${scene}`}
-            className="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-6 text-center"
-            initial="hidden"
-            animate="show"
-            exit="exit"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-6 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: FADE_S, ease: "easeInOut" }}
           >
             {SCENES[scene].map((t, i) => (
               <motion.p
                 key={t}
-                custom={i}
-                variants={line}
+                initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ delay: lineDelays(SCENES[scene])[i], duration: LINE_S, ease: [0.2, 0.7, 0.2, 1] }}
                 className={
                   scene === 0 && i === 1
                     ? "text-6xl font-black tracking-tight text-sky-200 md:text-8xl"
@@ -115,15 +134,15 @@ export default function StoryIntro() {
         ) : (
           <motion.div
             key="team"
-            className="relative z-10 flex h-full flex-col items-center justify-center px-4 py-14"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4 py-14"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: FADE_S, ease: "easeInOut" }}
           >
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9 }}
+              transition={{ delay: FADE_S * 0.5, duration: 1 }}
               className="text-center text-3xl font-bold tracking-tight md:text-5xl"
             >
               Meet the team that never leaves
@@ -134,7 +153,7 @@ export default function StoryIntro() {
               className="mt-4 h-auto max-h-[55vh] w-full max-w-4xl"
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 1 }}
+              transition={{ delay: FADE_S, duration: 1 }}
               role="img"
               aria-label="The six agents"
             >
@@ -148,10 +167,10 @@ export default function StoryIntro() {
                 {current ? (
                   <motion.div
                     key={current.id}
-                    initial={{ opacity: 0, y: 14 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.45 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
                   >
                     <p className="text-lg font-bold tracking-widest uppercase" style={{ color: current.color }}>
                       {current.name}
@@ -179,9 +198,11 @@ export default function StoryIntro() {
         )}
       </AnimatePresence>
 
-      <p className="pointer-events-none absolute bottom-10 left-1/2 z-20 -translate-x-1/2 text-xs text-slate-400">
-        {teamDone ? "" : "Click or press → to continue"}
-      </p>
+      {!teamDone && (
+        <p className="pointer-events-none absolute bottom-11 left-1/2 z-30 -translate-x-1/2 text-xs text-slate-400">
+          Click, press space or → to continue
+        </p>
+      )}
     </div>
   );
 }

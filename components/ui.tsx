@@ -1,11 +1,25 @@
 import type { ReactNode } from "react";
 
-export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children?: ReactNode }) {
+export function PageHeader({
+  title,
+  subtitle,
+  children,
+  agent,
+}: {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  children?: ReactNode;
+  /** An agent orb shown beside the title (components/agents/AgentBadge). */
+  agent?: ReactNode;
+}) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{title}</h1>
-        {subtitle && <p className="mt-1 text-lg text-slate-600">{subtitle}</p>}
+    <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex min-w-0 items-center gap-4">
+        {agent}
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">{title}</h1>
+          {subtitle && <p className="mt-1 text-lg text-ink-muted">{subtitle}</p>}
+        </div>
       </div>
       {children}
     </header>
@@ -14,10 +28,10 @@ export function PageHeader({ title, subtitle, children }: { title: string; subti
 
 export function Card({ title, aside, children, className = "" }: { title?: ReactNode; aside?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6 ${className}`}>
+    <section className={`glass rounded-2xl p-5 md:p-6 ${className}`}>
       {(title || aside) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          {title && <h2 className="text-xl font-bold text-slate-900">{title}</h2>}
+          {title && <h2 className="text-xl font-bold text-ink">{title}</h2>}
           {aside}
         </div>
       )}
@@ -36,10 +50,10 @@ export function Spinner({ className = "size-6" }: { className?: string }) {
 }
 
 export const buttonPrimary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-700 px-6 text-lg font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-lg font-bold text-accent-ink shadow-[0_0_28px_-6px_rgba(94,234,212,0.6)] transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none";
 
 export const buttonSecondary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border-2 border-slate-300 bg-white px-4 text-base font-medium text-slate-800 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50";
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-line-strong bg-glass px-4 text-base font-medium text-ink transition hover:border-accent/60 hover:bg-glass-strong disabled:opacity-50";
 
 /** "2026-09-30" → "Sep 30, 2026" without timezone drift. */
 export function formatDate(iso: string, opts: { year?: boolean } = { year: true }): string {

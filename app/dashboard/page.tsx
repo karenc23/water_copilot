@@ -1,26 +1,50 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import readingsSeed from "@/data/readings_seed.json";
 import logsSeed from "@/data/logs_seed.json";
 import { checkLogs, checkReadings } from "@/lib/rules";
 import type { LogEntry, Reading } from "@/types";
+import AgentBadge from "@/components/agents/AgentBadge";
+import { loadLogs } from "@/components/logbook-data";
 import ReadingsCharts from "@/components/ReadingsCharts";
 import { AlertList, PARAMETERS, RuleBadge, TIER_STYLE, TierIcon, readingTier, type Parameter } from "@/components/tier";
-import { Card, PageHeader, formatDate } from "@/components/ui";
+import { Card, PageHeader, Spinner, buttonPrimary, formatDate } from "@/components/ui";
 
 const PLANT_ID = "plant-a";
 
-// Seed files are the data source until MongoDB is live (same as /api/troubleshoot).
+// Readings and alerts use the seed files, the same data the troubleshoot pipeline checks.
+// The recent-logbook panel reads the live logbook (MongoDB).
 const readings = (readingsSeed as Reading[]).filter((r) => r.plant_id === PLANT_ID).sort((a, b) => a.date.localeCompare(b.date));
-const logs = (logsSeed as LogEntry[]).filter((l) => l.plant_id === PLANT_ID).sort((a, b) => b.date.localeCompare(a.date));
+const seedLogs = (logsSeed as LogEntry[]).filter((l) => l.plant_id === PLANT_ID).sort((a, b) => b.date.localeCompare(a.date));
 
 export default function DashboardPage() {
   const latest = readings.at(-1);
   // "Today" for the rules is the latest reading, matching lib/pipeline.
-  const alerts = [...checkReadings(readings), ...checkLogs(logs, latest?.date ?? logs[0]?.date)];
+  const alerts = [...checkReadings(readings), ...checkLogs(seedLogs, latest?.date ?? seedLogs[0]?.date)];
+  const worst = alerts.some((a) => a.tier === "red") ? "red" : alerts.length ? "yellow" : "green";
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle={latest ? `Latest reading: ${formatDate(latest.date)}` : "No readings yet"} />
+      <PageHeader
+        title="Plant Status"
+        subtitle={<>Reported by the Sentinel{latest ? ` · latest reading ${formatDate(latest.date)}` : ""}</>}
+        agent={<AgentBadge id="sentinel" state="active" />}
+      >
+        <Link href="/troubleshoot" className={buttonPrimary}>
+          Ask the agents →
+        </Link>
+      </PageHeader>
+
+      <div className="glass mb-6 rounded-2xl rounded-tl-sm border-l-4 border-l-amber-300/80 p-5">
+        <p className="text-sm font-bold tracking-widest text-amber-300 uppercase">Sentinel’s report</p>
+        <p className="mt-1 text-lg leading-relaxed text-ink">
+          I checked {readings.length} days of readings and the logbook against the fixed safety rules.{" "}
+          {alerts.length === 0
+            ? "Everything is within limits."
+            : `${alerts.length} ${alerts.length === 1 ? "thing needs" : "things need"} your attention${worst === "red" ? ", and one is an emergency" : ""}.`}
+        </p>
+      </div>
 
       {latest && (
         <div className="grid gap-4 sm:grid-cols-3">
@@ -30,11 +54,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <Card title="Active alerts" aside={<RuleBadge />} className="mt-6">
+      <Card title="What I flagged" aside={<RuleBadge />} className="mt-6">
         <AlertList alerts={alerts} empty="No active alerts. Everything is within limits." />
         {alerts.length > 0 && (
-          <Link href="/troubleshoot" className="mt-4 inline-block text-base font-semibold text-blue-800 underline underline-offset-4">
-            Troubleshoot this →
+          <Link href="/troubleshoot" className="mt-4 inline-block text-base font-semibold text-accent underline underline-offset-4">
+            Ask the agents what to do →
           </Link>
         )}
       </Card>
@@ -45,24 +69,51 @@ export default function DashboardPage() {
         </Card>
 
         <div className="lg:col-span-2">
-          <Card title="Recent logbook" aside={<Link href="/logbook" className="text-base font-semibold text-blue-800 underline underline-offset-4">All entries</Link>}>
-            <ul className="divide-y divide-slate-200">
-              {logs.slice(0, 5).map((l, i) => (
-                <li key={i} className="py-3 first:pt-0 last:pb-0">
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                    <span className="font-semibold text-slate-800">{formatDate(l.date)}</span>
-                    <span>· {l.operator}</span>
-                    {l.escalated && <span className="rounded bg-slate-800 px-1.5 py-0.5 text-xs font-semibold text-white">Escalated</span>}
-                  </div>
-                  <p className="mt-0.5 text-base font-medium text-slate-900">{l.problem}</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{l.outcome}</p>
-                </li>
-              ))}
-            </ul>
+          <Card
+            title={
+              <span className="flex items-center gap-2">
+                <AgentBadge id="keeper" className="size-9" /> From the Keeper’s memory
+              </span>
+            }
+            aside={
+              <Link href="/logbook" className="text-base font-semibold text-accent underline underline-offset-4">
+                All entries
+              </Link>
+            }
+          >
+            <Suspense
+              fallback={
+                <p className="flex items-center gap-2 text-base text-ink-muted">
+                  <Spinner className="size-5" /> Loading the logbook…
+                </p>
+              }
+            >
+              <RecentLogs />
+            </Suspense>
           </Card>
         </div>
       </div>
     </>
+  );
+}
+
+async function RecentLogs() {
+  await connection();
+  const { logs } = await loadLogs();
+  return (
+    <ul className="divide-y divide-line">
+      {logs.slice(0, 5).map((l, i) => (
+        <li key={i} className="py-3 first:pt-0 last:pb-0">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+            <span className="font-semibold text-ink">{formatDate(l.date)}</span>
+            <span>· {l.operator}</span>
+            {l.escalated && <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white">Escalated</span>}
+          </div>
+          <p className="mt-0.5 text-base font-medium text-ink">{l.problem}</p>
+          <p className="mt-0.5 text-sm text-ink-muted">{l.outcome}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -72,19 +123,19 @@ function ReadingCard({ parameter, value, previous }: { parameter: Parameter; val
   const meta = PARAMETERS[parameter];
   const delta = previous === undefined ? null : Math.round((value - previous) * 100) / 100;
   return (
-    <div className={`rounded-xl border-2 bg-white p-5 shadow-sm ${s.border}`}>
+    <div className={`glass rounded-2xl border-2 p-5 ${s.border}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-lg font-semibold text-slate-800">{meta.name}</span>
+        <span className="text-lg font-semibold text-ink">{meta.name}</span>
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-bold ${s.solid}`}>
           <TierIcon tier={tier} className="size-4" />
           {s.label.toUpperCase()}
         </span>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className={`text-5xl font-black tabular-nums ${tier === "green" ? "text-slate-900" : s.text}`}>{value}</span>
-        <span className="text-xl text-slate-600">{meta.unit}</span>
+        <span className={`text-5xl font-black tabular-nums ${tier === "green" ? "text-ink" : s.text}`}>{value}</span>
+        <span className="text-xl text-ink-muted">{meta.unit}</span>
       </div>
-      <div className="mt-2 text-sm text-slate-600">
+      <div className="mt-2 text-sm text-ink-muted">
         {meta.normal}
         {delta !== null && (
           <span className="block">

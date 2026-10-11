@@ -16,7 +16,7 @@ export default function TroubleshootViews({ initial = "agents" }: { initial?: Vi
   const [view, setView] = useState<View>(initial);
   return (
     <>
-      <div role="tablist" aria-label="Troubleshoot view" className="mb-6 inline-flex rounded-xl bg-slate-200 p-1">
+      <div role="tablist" aria-label="Troubleshoot view" className="glass mb-6 inline-flex rounded-xl p-1">
         {VIEWS.map((v) => (
           <button
             key={v.id}
@@ -25,7 +25,7 @@ export default function TroubleshootViews({ initial = "agents" }: { initial?: Vi
             aria-selected={view === v.id}
             onClick={() => setView(v.id)}
             className={`min-h-11 rounded-lg px-4 text-base font-semibold transition-colors ${
-              view === v.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+              view === v.id ? "glow-accent border border-accent/50 bg-accent/15 text-white" : "border border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             {v.label}

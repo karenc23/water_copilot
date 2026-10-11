@@ -6,26 +6,26 @@ import { LIMITS, type Alert, type Tier } from "@/lib/rules";
 export const TIER_STYLE: Record<Tier, { label: string; soft: string; solid: string; text: string; border: string; bar: string }> = {
   green: {
     label: "Green",
-    soft: "bg-green-50",
-    solid: "bg-green-700 text-white",
-    text: "text-green-900",
-    border: "border-green-700",
+    soft: "bg-green-500/12",
+    solid: "bg-green-600 text-white shadow-[0_0_24px_-6px_rgba(74,222,128,0.7)]",
+    text: "text-green-300",
+    border: "border-green-500",
     bar: "bg-green-600",
   },
   yellow: {
     label: "Yellow",
-    soft: "bg-amber-50",
-    solid: "bg-amber-400 text-amber-950",
-    text: "text-amber-950",
-    border: "border-amber-500",
+    soft: "bg-amber-400/12",
+    solid: "bg-amber-400 text-amber-950 shadow-[0_0_24px_-6px_rgba(250,204,21,0.7)]",
+    text: "text-amber-200",
+    border: "border-amber-400",
     bar: "bg-amber-400",
   },
   red: {
     label: "Red",
-    soft: "bg-red-50",
-    solid: "bg-red-700 text-white",
-    text: "text-red-900",
-    border: "border-red-700",
+    soft: "bg-red-500/15",
+    solid: "bg-red-600 text-white shadow-[0_0_24px_-6px_rgba(248,113,113,0.8)]",
+    text: "text-red-300",
+    border: "border-red-500",
     bar: "bg-red-600",
   },
 };
@@ -102,7 +102,7 @@ export const PARAMETERS: Record<Parameter, { name: string; unit: string; normal:
 // ---------------------------------------------------------------------------
 
 export function AlertList({ alerts, empty = "No alerts." }: { alerts: Alert[]; empty?: string }) {
-  if (!alerts.length) return <p className="text-lg text-slate-600">{empty}</p>;
+  if (!alerts.length) return <p className="text-lg text-ink-muted">{empty}</p>;
   return (
     <ul className="space-y-3">
       {alerts.map((a, i) => {
@@ -114,10 +114,10 @@ export function AlertList({ alerts, empty = "No alerts." }: { alerts: Alert[]; e
             </span>
             <div className="min-w-0 flex-1">
               <p className={`text-lg font-semibold ${s.text}`}>{a.message}</p>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
                 <TierPill tier={a.tier} />
                 <ManualTag section={a.manual_section} />
-                <span className="font-mono text-xs text-slate-500">{a.rule_id}</span>
+                <span className="font-mono text-xs text-ink-faint">{a.rule_id}</span>
               </p>
             </div>
           </li>
@@ -129,7 +129,7 @@ export function AlertList({ alerts, empty = "No alerts." }: { alerts: Alert[]; e
 
 export function ManualTag({ section }: { section: string }) {
   return (
-    <span className="inline-flex items-center rounded-md border border-slate-300 bg-white px-2 py-0.5 font-mono text-sm font-semibold text-slate-800">
+    <span className="inline-flex items-center rounded-md border border-line-strong bg-glass px-2 py-0.5 font-mono text-sm font-semibold text-ink">
       Manual §{section}
     </span>
   );
@@ -138,7 +138,7 @@ export function ManualTag({ section }: { section: string }) {
 /** "Rule-detected, not AI" label for deterministic alerts. */
 export function RuleBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-800 px-2.5 py-1 text-sm font-semibold text-white">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-white/15 px-2.5 py-1 text-sm font-semibold text-white">
       <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
         <path d="M3 5h18v2H3V5Zm0 6h18v2H3v-2Zm0 6h12v2H3v-2Z" />
       </svg>

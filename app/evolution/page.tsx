@@ -18,7 +18,7 @@ export default function EvolutionPage() {
       <Suspense
         fallback={
           <Card>
-            <div className="flex items-center gap-3 text-lg text-slate-700">
+            <div className="flex items-center gap-3 text-lg text-ink-soft">
               <Spinner /> Loading results…
             </div>
           </Card>
@@ -42,7 +42,7 @@ async function EvolutionContent() {
   if (!data || !data.rounds.length) {
     return (
       <Card>
-        <p className="text-lg text-slate-700">
+        <p className="text-lg text-ink-soft">
           No optimizer results yet. Run <code className="font-mono">npx tsx scripts/optimize.ts</code> to create data/results.json.
         </p>
       </Card>

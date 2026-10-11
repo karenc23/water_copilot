@@ -7,6 +7,8 @@ export interface Score {
   /** score / max × 100, or null if max is unknown. */
   pct: number | null;
   metrics: Record<string, number>;
+  /** Score on the hard-scenario subset ("7/22" in results.json), if recorded. */
+  hard: { score: number; max: number } | null;
 }
 
 export interface Strategy extends Score {
@@ -30,6 +32,8 @@ export interface Results {
   baselines: { plain: Score | null; rules: Score | null; expert: (Score & { id: string | null }) | null };
   rounds: Round[];
   test: {
+    /** What "Baseline" means in the headline: test.baseline if the optimizer records one, else the plain LLM. */
+    baseline: (Score & { label: string }) | null;
     plain: Score | null;
     rules: Score | null;
     expert: (Score & { id: string | null }) | null;
@@ -52,6 +56,18 @@ function metricsOf(v: unknown): Record<string, number> {
   return out;
 }
 
+/** "7/22", "-1/22" or { score, max }. */
+function hardOf(v: unknown): Score["hard"] {
+  const o = obj(v);
+  if (o) {
+    const score = num(o.score);
+    const max = num(o.max) ?? num(o.max_score);
+    return score !== null && max ? { score, max } : null;
+  }
+  const m = typeof v === "string" ? v.match(/^\s*(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/) : null;
+  return m && Number(m[2]) ? { score: Number(m[1]), max: Number(m[2]) } : null;
+}
+
 function scoreOf(v: unknown, fallbackMax: number | null = null): Score | null {
   const o = obj(v);
   if (!o) return null;
@@ -59,7 +75,7 @@ function scoreOf(v: unknown, fallbackMax: number | null = null): Score | null {
   const score = num(o.score) ?? metrics.score ?? null;
   if (score === null) return null;
   const max = num(o.max_score) ?? metrics.max_score ?? fallbackMax;
-  return { score, max, pct: max ? (score / max) * 100 : null, metrics };
+  return { score, max, pct: max ? (score / max) * 100 : null, metrics, hard: hardOf(obj(o.metrics)?.hard_score ?? o.hard_score) };
 }
 
 function strategyOf(v: unknown, i: number, fallbackMax: number | null): Strategy | null {
@@ -119,12 +135,20 @@ export function parseResults(raw: unknown): Results {
   const testExpertScore = scoreOf(test.expert_reference, testMax);
   const testBestScore = scoreOf(test.best, testMax);
 
+  const explicitBaseline = scoreOf(test.baseline, testMax);
+  const baseline = explicitBaseline
+    ? { ...explicitBaseline, label: str(obj(test.baseline)?.label) ?? str(obj(test.baseline)?.id) ?? "Baseline" }
+    : testPlain
+      ? { ...testPlain, label: "Plain LLM" }
+      : null;
+
   return {
     generatedAt: str(r.generated_at),
     quick: r.quick === true,
     baselines: { plain, rules, expert: expert ? { ...expert, id: expert.id } : null },
     rounds,
     test: {
+      baseline,
       plain: testPlain,
       rules: testRules,
       expert: testExpertScore ? { ...testExpertScore, id: str(obj(test.expert_reference)?.id) } : null,

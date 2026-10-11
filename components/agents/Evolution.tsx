@@ -3,7 +3,17 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import Aurora from "@/components/agents/Aurora";
-import type { EvoStrategy, Evolution as EvolutionData, Outcome, ScenarioCard, TestRow } from "@/components/evolution-data";
+import type {
+  AgentRun,
+  EvoRound,
+  EvoStrategy,
+  Evolution as EvolutionData,
+  FixStatus,
+  Outcome,
+  ParallelComparison,
+  ScenarioCard,
+  TestRow,
+} from "@/components/evolution-data";
 
 // Generations left to right, driven entirely by data/results.json:
 // round 0's single generic strategy → for each later round, the Critic pulls in the parent's
@@ -85,10 +95,13 @@ export default function Evolution({ data }: { data: EvolutionData }) {
   // Best-so-far line, one point per generation.
   const points = rounds.flatMap((rd, g) => {
     const best = rd.bestId ? byId.get(rd.bestId) : undefined;
-    return best ? [{ g, x: colX(g), score: best.score, id: best.id, shown: g === 0 ? reached("gen0") : reached("select", rd.round) }] : [];
+    return best ? [{ g, x: colX(g), score: best.score, id: best.id, hit: rd.hitRate, shown: g === 0 ? reached("gen0") : reached("select", rd.round) }] : [];
   });
 
   const caption = captionFor(cur, data, byId);
+  // The round the details panel describes: the one being animated (the last one at the end).
+  const detailRound = "r" in cur ? rounds.find((x) => x.round === cur.r) ?? null : cur.kind === "test" ? rounds.at(-1) ?? null : null;
+  const detailReveal = !detailRound ? 0 : cur.kind === "test" || reached("select", detailRound.round) ? 3 : reached("scores", detailRound.round) ? 2 : reached("spawn", detailRound.round) ? 1 : 0;
   return (
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-2xl bg-[#040a17] text-white shadow-xl ring-1 ring-white/10">
@@ -169,7 +182,11 @@ export default function Evolution({ data }: { data: EvolutionData }) {
               const cy = 120;
               const parent = rd.parentId ? pos.get(rd.parentId) : undefined;
               const showCritic = reached("critic", rd.round);
-              const showCards = reached("cards", rd.round) && !reached("spawn", rd.round);
+              // Cards come in for the critic, leave while children spawn, and return with their
+              // outcome once the survivor is picked (until the next round starts).
+              const reviewing = reached("select", rd.round) && !reached("critic", rd.round + 1) && !reached("test");
+              const showCards = (reached("cards", rd.round) && !reached("spawn", rd.round)) || reviewing;
+              const fixes = new Map(rd.fixes.map((f) => [f.id, f]));
               const spawned = reached("spawn", rd.round);
               const scored = reached("scores", rd.round);
               const selectedNow = reached("select", rd.round);
@@ -188,14 +205,16 @@ export default function Evolution({ data }: { data: EvolutionData }) {
                       transition={{ duration: 0.8 }}
                     />
                   )}
+                  {/* Lineage: parent → child, bending through the Critic that wrote it. */}
                   {spawned &&
                     rd.strategies.map((s) => {
                       const p = pos.get(s.id)!;
+                      const from = (s.parentId && pos.get(s.parentId)) || { x: cx, y: cy };
                       const win = selectedNow && rd.bestId === s.id;
                       return (
                         <motion.path
                           key={s.id}
-                          d={`M${cx} ${cy} Q${cx + 40} ${p.y} ${p.x} ${p.y}`}
+                          d={`M${from.x} ${from.y} Q${cx} ${cy} ${p.x} ${p.y}`}
                           fill="none"
                           stroke={TEAL}
                           strokeWidth={win ? 2.5 : 1.5}
@@ -229,7 +248,14 @@ export default function Evolution({ data }: { data: EvolutionData }) {
                   <AnimatePresence>
                     {showCards &&
                       rd.worst.map((c, k) => (
-                        <ScenarioChip key={`${rd.round}-${c.id}`} card={c} from={parent ?? { x: cx, y: cy }} to={{ x: cx, y: 190 + k * 50 }} delay={0.15 + k * 0.38} />
+                        <ScenarioChip
+                          key={`${rd.round}-${c.id}-${reviewing ? "after" : "before"}`}
+                          card={c}
+                          fix={reviewing ? fixes.get(c.id) : undefined}
+                          from={reviewing ? { x: cx, y: 190 + k * 50 } : (parent ?? { x: cx, y: cy })}
+                          to={{ x: cx, y: 190 + k * 50 }}
+                          delay={reviewing ? 0.5 + k * 0.15 : 0.15 + k * 0.38}
+                        />
                       ))}
                   </AnimatePresence>
 
@@ -266,8 +292,10 @@ export default function Evolution({ data }: { data: EvolutionData }) {
               />
             ))}
           </svg>
-          <p className="px-4 pb-2 text-center text-sm text-slate-400">Click any strategy orb to read its full prompt.</p>
+          <p className="px-4 pb-2 text-center text-sm text-ink-faint">Click any strategy orb to read its full prompt.</p>
         </div>
+
+        <RoundDetails round={detailRound} reveal={detailReveal} onOpen={setSelected} />
 
         {/* Score line */}
         <ScoreLine
@@ -292,6 +320,8 @@ export default function Evolution({ data }: { data: EvolutionData }) {
           </motion.section>
         )}
       </AnimatePresence>
+
+      {data.parallel && <ParallelPanel c={data.parallel} />}
 
       <PromptPanel s={selected} max={trainMax} onClose={() => setSelected(null)} />
     </div>
@@ -325,31 +355,52 @@ function captionFor(s: Step, data: EvolutionData, byId: Map<string, EvoStrategy>
       if (!best) return "No strategy qualified this round.";
       if (best.round !== rd.round) return `No child beat ${best.id} (${best.score}${of}); it survives.`;
       const delta = parent ? best.score - parent.score : null;
-      return `${best.id} survives with ${best.score}${of}${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}. The others fade.`;
+      const fixed = rd.fixes.filter((f) => f.status === "fixed" || f.status === "improved").length;
+      const hit = rd.fixes.length ? ` It fixed or improved ${fixed} of ${rd.fixes.length} targeted scenarios.` : "";
+      return `${best.id} survives with ${best.score}${of}${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}.${hit}`;
     }
   }
 }
 
-function ScenarioChip({ card, from, to, delay }: { card: ScenarioCard; from: { x: number; y: number }; to: { x: number; y: number }; delay: number }) {
+const FIX_LABEL: Record<FixStatus, string> = { fixed: "✓ fixed", improved: "↑ improved", same: "= no change", worse: "↓ worse", unknown: "not scored" };
+const FIX_COLOR: Record<FixStatus, string> = { fixed: TEAL, improved: "#7dd3fc", same: "#aab7c9", worse: "#fcd34d", unknown: "#aab7c9" };
+
+function ScenarioChip({
+  card,
+  fix,
+  from,
+  to,
+  delay,
+}: {
+  card: ScenarioCard;
+  /** Set once the survivor is picked: how this targeted scenario did next. */
+  fix?: EvoRound["fixes"][number];
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  delay: number;
+}) {
   const w = 200;
   const h = 42;
+  const color = fix ? FIX_COLOR[fix.status] : CRITIC;
+  const good = fix && (fix.status === "fixed" || fix.status === "improved");
   return (
     <motion.g
-      initial={{ x: from.x - w / 2, y: from.y - h / 2, opacity: 0, scale: 0.5 }}
-      animate={{ x: to.x - w / 2, y: to.y - h / 2, opacity: 1, scale: 1 }}
+      initial={{ x: from.x - w / 2, y: from.y - h / 2, opacity: 0, scale: fix ? 0.95 : 0.5 }}
+      animate={{ x: to.x - w / 2, y: to.y - h / 2, opacity: fix && !good ? 0.7 : 1, scale: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.4 } }}
-      transition={{ duration: 0.9, delay, ease: [0.3, 0, 0.2, 1] }}
+      transition={{ duration: fix ? 0.5 : 0.9, delay, ease: [0.3, 0, 0.2, 1] }}
     >
-      <rect width={w} height={h} rx={8} fill="#0b1426" fillOpacity={0.92} stroke={CRITIC} strokeOpacity={0.6} />
+      {good && <rect x={-4} y={-4} width={w + 8} height={h + 8} rx={11} fill={color} opacity={0.18} />}
+      <rect width={w} height={h} rx={8} fill="#0b1426" fillOpacity={0.94} stroke={color} strokeOpacity={good ? 1 : 0.6} strokeWidth={good ? 2 : 1} />
       <text x={10} y={17} fontSize={13} fontWeight={700} fill="#fff">
         {card.id}
         {card.hard ? " · hard" : ""}
       </text>
-      <text x={w - 10} y={17} fontSize={13} textAnchor="end" fill="#cbd5e1">
-        {card.score}/{card.max}
+      <text x={w - 10} y={17} fontSize={13} textAnchor="end" fill={fix ? color : "#cbd5e1"} fontWeight={fix ? 700 : 400}>
+        {fix && fix.after !== null ? `${fix.before}→${fix.after}/${fix.max}` : `${card.score}/${card.max}`}
       </text>
-      <text x={10} y={34} fontSize={12} fill="#cbd5e1">
-        exp {fmt(card.expected)} → got {fmt(card.got)}
+      <text x={10} y={34} fontSize={12} fill={fix ? color : "#cbd5e1"}>
+        {fix ? `${FIX_LABEL[fix.status]} in the survivor` : `exp ${fmt(card.expected)} → got ${fmt(card.got)}`}
       </text>
     </motion.g>
   );
@@ -429,7 +480,7 @@ function ScoreLine({
   hover,
   setHover,
 }: {
-  points: { g: number; x: number; score: number; id: string; shown: boolean }[];
+  points: { g: number; x: number; score: number; id: string; shown: boolean; hit: number | null }[];
   trainMax: number | null;
   expert: { id: string; score: number } | null;
   hover: number | null;
@@ -450,7 +501,7 @@ function ScoreLine({
   return (
     <div className="relative z-10 border-t border-white/10 px-1 pt-2 pb-3">
       <p className="px-3 text-sm font-semibold text-slate-300">
-        Best training score so far <span className="font-normal text-slate-400">(axis starts at {lo}{trainMax ? `, max ${trainMax}` : ""})</span>
+        Best training score so far <span className="font-normal text-ink-faint">(axis starts at {lo}{trainMax ? `, max ${trainMax}` : ""})</span>
       </p>
       <div className="relative">
         <svg viewBox={`0 0 ${W} ${h}`} className="block h-auto w-full" role="img" aria-label="Best training score per round">
@@ -488,14 +539,15 @@ function ScoreLine({
             </g>
           ))}
           {points.map((p) => (
-            <text key={`x${p.g}`} x={p.x} y={h - 10} textAnchor="middle" fontSize={12} fill="#94a3b8">
+            <text key={`x${p.g}`} x={p.x} y={h - 10} textAnchor="middle" fontSize={12} fill="#aab7c9">
               Round {p.g}
+              {p.hit != null && p.shown ? ` · feedback hit ${Math.round(p.hit * 100)}%` : ""}
             </text>
           ))}
         </svg>
         {hp && (
           <div
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg bg-white px-3 py-1.5 text-sm text-slate-900 shadow-lg"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg bg-glass px-3 py-1.5 text-sm text-ink shadow-lg"
             style={{ left: `${(hp.x / W) * 100}%`, top: `${(y(hp.score) / h) * 100 - 6}%` }}
           >
             <div className="font-semibold">Round {hp.g}</div>
@@ -514,9 +566,9 @@ function TestComparison({ rows, count }: { rows: TestRow[]; count: number | null
   const dangerous = rows[0]?.dangerous ?? 0;
   const safe = rows[0]?.safe ?? 0;
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <h2 className="text-2xl font-bold text-slate-900">On scenarios it never saw</h2>
-      <p className="mt-1 text-base text-slate-600">
+    <div className="rounded-2xl border border-line bg-glass p-5 md:p-6">
+      <h2 className="text-2xl font-bold text-ink">On scenarios it never saw</h2>
+      <p className="mt-1 text-base text-ink-muted">
         {count ?? "The"} held-out test scenarios: {dangerous} truly dangerous (should escalate), {safe} not. Lower is better on both.
       </p>
       <div className="mt-6 grid gap-8 md:grid-cols-2">
@@ -537,13 +589,13 @@ function TestComparison({ rows, count }: { rows: TestRow[]; count: number | null
       </div>
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {rows.map((r) => (
-          <div key={r.key} className={`rounded-xl p-3 ${r.key === "evolved" ? "bg-teal-50 ring-2 ring-teal-600" : "bg-slate-50"}`}>
-            <div className="text-sm font-semibold text-slate-600">{r.label}</div>
-            <div className="text-2xl font-black text-slate-900 tabular-nums">
+          <div key={r.key} className={`rounded-xl p-3 ${r.key === "evolved" ? "bg-teal-50 ring-2 ring-teal-600" : "bg-glass"}`}>
+            <div className="text-sm font-semibold text-ink-muted">{r.label}</div>
+            <div className="text-2xl font-black text-ink tabular-nums">
               {r.score}
-              {r.max ? <span className="text-base font-semibold text-slate-500"> / {r.max}</span> : null}
+              {r.max ? <span className="text-base font-semibold text-ink-faint"> / {r.max}</span> : null}
             </div>
-            <div className="text-xs text-slate-500">test score</div>
+            <div className="text-xs text-ink-faint">test score</div>
           </div>
         ))}
       </div>
@@ -566,16 +618,16 @@ function RateChart({
 }) {
   return (
     <div>
-      <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-      <p className="text-sm text-slate-600">{detail}</p>
+      <h3 className="text-lg font-bold text-ink">{title}</h3>
+      <p className="text-sm text-ink-muted">{detail}</p>
       <ul className="mt-3 space-y-2.5">
         {rows.map((r, i) => {
           const v = value(r);
           const ours = r.key === "evolved";
           return (
             <li key={r.key} className="grid grid-cols-[7.5rem_1fr_4.5rem] items-center gap-3" title={`${r.label}: ${label(r)} (${Math.round(v * 100)}%)`}>
-              <span className={`text-sm ${ours ? "font-bold text-slate-900" : "text-slate-700"}`}>{r.label}</span>
-              <span className="h-5 rounded bg-slate-100">
+              <span className={`text-sm ${ours ? "font-bold text-ink" : "text-ink-soft"}`}>{r.label}</span>
+              <span className="h-5 rounded bg-glass-strong">
                 <motion.span
                   className={`block h-full rounded ${ours ? "bg-teal-600" : "bg-slate-400"}`}
                   initial={{ width: 0 }}
@@ -583,8 +635,8 @@ function RateChart({
                   transition={{ duration: 0.8, delay: 0.2 + i * 0.12 }}
                 />
               </span>
-              <span className="text-right text-sm text-slate-800 tabular-nums">
-                <span className="font-semibold">{Math.round(v * 100)}%</span> <span className="text-slate-500">{label(r)}</span>
+              <span className="text-right text-sm text-ink tabular-nums">
+                <span className="font-semibold">{Math.round(v * 100)}%</span> <span className="text-ink-faint">{label(r)}</span>
               </span>
             </li>
           );
@@ -617,7 +669,7 @@ function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number |
             role="dialog"
             aria-modal="true"
             aria-labelledby="prompt-title"
-            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-glass p-6 shadow-2xl"
             initial={{ y: 40, scale: 0.97 }}
             animate={{ y: 0, scale: 1 }}
             exit={{ y: 40, opacity: 0 }}
@@ -625,40 +677,255 @@ function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number |
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="prompt-title" className="text-2xl font-bold text-slate-900">
+                <h2 id="prompt-title" className="text-2xl font-bold text-ink">
                   {s.id}
                 </h2>
-                <p className="text-base text-slate-600">
+                <p className="text-base text-ink-muted">
                   Round {s.round} · training score {s.score}
                   {max ? ` / ${max}` : ""}
                   {s.metrics.escalation_recall !== undefined && ` · caught ${Math.round(s.metrics.escalation_recall * 100)}% of dangers`}
                   {s.metrics.false_alarms !== undefined && ` · ${s.metrics.false_alarms} false alarms`}
                 </p>
               </div>
-              <button type="button" onClick={onClose} autoFocus className="min-h-11 rounded-lg border border-slate-300 px-4 text-base font-semibold text-slate-800 hover:bg-slate-50">
+              <button type="button" onClick={onClose} autoFocus className="min-h-11 rounded-lg border border-line-strong px-4 text-base font-semibold text-ink hover:bg-glass-strong">
                 Close
               </button>
             </div>
-            {s.rationale && (
+            {s.hypothesis && (
               <>
-                <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">Why the Critic wrote it</h3>
-                <p className="mt-1 text-base leading-relaxed text-slate-800">{s.rationale}</p>
+                <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-ink-faint">Hypothesis</h3>
+                <p className="mt-1 text-base leading-relaxed text-ink">{s.hypothesis}</p>
+              </>
+            )}
+            {s.changes && (
+              <>
+                <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-ink-faint">What I changed and why</h3>
+                <p className="mt-1 text-base leading-relaxed text-ink">{s.changes}</p>
               </>
             )}
             {Object.keys(s.settings).length > 0 && (
               <p className="mt-4 flex flex-wrap gap-2">
                 {Object.entries(s.settings).map(([k, v]) => (
-                  <span key={k} className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-sm text-slate-700">
+                  <span key={k} className="rounded-md bg-glass-strong px-2 py-0.5 font-mono text-sm text-ink-soft">
                     {k}: {String(v)}
                   </span>
                 ))}
               </p>
             )}
-            <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">Full prompt</h3>
-            <pre className="mt-1 rounded-lg bg-slate-50 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-slate-900">{s.prompt ?? "(not recorded)"}</pre>
+            <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-ink-faint">Full prompt</h3>
+            <pre className="mt-1 rounded-lg bg-glass p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-ink">{s.prompt ?? "(not recorded)"}</pre>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** The children of the round being animated: hypothesis, what changed and why, score, and the round's feedback hit rate. */
+function RoundDetails({ round, reveal, onOpen }: { round: EvoRound | null; reveal: number; onOpen: (s: EvoStrategy) => void }) {
+  if (!round || round.round === 0 || reveal === 0) return null;
+  const fixed = round.fixes.filter((f) => f.status === "fixed" || f.status === "improved").length;
+  return (
+    <div className="relative z-10 border-t border-white/10 px-4 py-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-base font-bold text-white">Round {round.round}: the Critic’s children</h3>
+        {reveal >= 3 && round.hitRate !== null && (
+          <p className="text-sm text-ink-soft">
+            Feedback hit rate{" "}
+            <span className="font-bold text-accent tabular-nums">{Math.round(round.hitRate * 100)}%</span>
+            {round.hitRateSource === "computed" && round.fixes.length > 0 && (
+              <span className="text-ink-faint">
+                {" "}
+                · {fixed} of {round.fixes.length} targeted scenarios fixed or improved in the survivor
+              </span>
+            )}
+          </p>
+        )}
+      </div>
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        {round.strategies.map((s, i) => {
+          const winner = reveal >= 3 && round.bestId === s.id;
+          const loser = reveal >= 3 && round.bestId !== s.id;
+          return (
+            <motion.button
+              type="button"
+              key={s.id}
+              onClick={() => onOpen(s)}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: loser ? 0.55 : 1, y: 0 }}
+              transition={{ delay: i * 0.12 }}
+              className={`rounded-xl border p-3 text-left transition hover:bg-white/10 ${winner ? "glow-accent bg-accent/10" : "border-white/15 bg-white/[0.04]"}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-bold text-white">{s.id}</span>
+                {reveal >= 2 && (
+                  <span className="text-sm font-bold text-white tabular-nums">
+                    {s.score}
+                    {winner && <span className="ml-1.5 rounded bg-accent px-1.5 py-0.5 text-xs text-accent-ink">survives</span>}
+                  </span>
+                )}
+              </div>
+              {s.hypothesis && (
+                <p className="mt-2 text-sm text-ink-soft">
+                  <span className="font-semibold text-aurora-violet">Hypothesis: </span>
+                  {s.hypothesis}
+                </p>
+              )}
+              {s.changes && (
+                <p className="mt-2 line-clamp-4 text-sm text-ink-soft">
+                  <span className="font-semibold text-accent">What I changed and why: </span>
+                  {s.changes}
+                </p>
+              )}
+              <span className="mt-2 block text-xs font-semibold text-ink-faint">Read the full prompt →</span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const RUN_COLORS = { a: "#5eead4", b: "#a5b4fc" } as const;
+
+/** A (parallel agents) vs B (single agent): best score vs. candidates evaluated and vs. wall-clock time. */
+function ParallelPanel({ c }: { c: ParallelComparison }) {
+  const hasTime = c.a.points.some((p) => p.seconds !== null) && c.b.points.some((p) => p.seconds !== null);
+  return (
+    <section className="glass rounded-2xl p-5 md:p-6">
+      <h2 className="text-2xl font-bold text-ink">Parallel vs single agent</h2>
+      <p className="mt-1 text-base text-ink-muted">Best training score as the search goes on, for the same optimizer run two ways.</p>
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-soft">
+        {(["a", "b"] as const).map((k) => (
+          <span key={k} className="inline-flex items-center gap-2">
+            <span className="h-[3px] w-6 rounded" style={{ background: RUN_COLORS[k], boxShadow: `0 0 8px ${RUN_COLORS[k]}` }} />
+            {c[k].label}
+          </span>
+        ))}
+      </div>
+      <div className={`mt-4 grid gap-6 ${hasTime ? "lg:grid-cols-2" : ""}`}>
+        <RunChart title="Best score vs. candidates evaluated" a={c.a} b={c.b} x={(p) => p.candidates} xLabel={(v) => `${Math.round(v)}`} />
+        {hasTime && (
+          <RunChart title="Best score vs. wall-clock time" a={c.a} b={c.b} x={(p) => p.seconds ?? 0} xLabel={(v) => (v >= 120 ? `${Math.round(v / 60)} min` : `${Math.round(v)} s`)} />
+        )}
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {(["a", "b"] as const).map((k) => (
+          <div key={k} className="rounded-xl border border-line bg-glass-strong p-3">
+            <div className="text-sm font-semibold text-ink-muted">{c[k].label} · test score</div>
+            <div className="text-2xl font-black text-ink tabular-nums">
+              {c[k].test ? (
+                <>
+                  {c[k].test!.score}
+                  {c[k].test!.max != null && <span className="text-base font-semibold text-ink-faint"> / {c[k].test!.max}</span>}
+                </>
+              ) : (
+                "—"
+              )}
+            </div>
+          </div>
+        ))}
+        <div className="glow-accent rounded-xl border bg-accent/10 p-3">
+          <div className="text-sm font-semibold text-accent">Concurrency speedup</div>
+          <div className="text-2xl font-black text-ink tabular-nums">{c.speedup != null ? `${c.speedup.toFixed(1)}×` : "—"}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RunChart({
+  title,
+  a,
+  b,
+  x,
+  xLabel,
+}: {
+  title: string;
+  a: AgentRun;
+  b: AgentRun;
+  x: (p: AgentRun["points"][number]) => number;
+  xLabel: (v: number) => string;
+}) {
+  const [hover, setHover] = useState<{ k: "a" | "b"; i: number } | null>(null);
+  const w = 480;
+  const h = 220;
+  const m = { l: 40, r: 14, t: 14, b: 30 };
+  const all = [...a.points, ...b.points];
+  const xs = all.map(x);
+  const ys = all.map((p) => p.best);
+  const x0 = Math.min(...xs);
+  const x1 = Math.max(...xs) || 1;
+  const y0 = Math.floor(Math.min(...ys) / 10) * 10;
+  const y1 = Math.ceil(Math.max(...ys) / 10) * 10 || 1;
+  const sx = (v: number) => m.l + ((v - x0) / (x1 - x0 || 1)) * (w - m.l - m.r);
+  const sy = (v: number) => h - m.b - ((v - y0) / (y1 - y0 || 1)) * (h - m.t - m.b);
+  const runs = { a, b };
+  const hp = hover ? runs[hover.k].points[hover.i] : null;
+  return (
+    <figure>
+      <figcaption className="mb-1 text-base font-semibold text-ink">{title}</figcaption>
+      <div className="relative">
+        <svg viewBox={`0 0 ${w} ${h}`} className="block h-auto w-full" role="img" aria-label={title}>
+          {[y0, (y0 + y1) / 2, y1].map((t) => (
+            <g key={t}>
+              <line x1={m.l} x2={w - m.r} y1={sy(t)} y2={sy(t)} stroke="rgba(186,206,235,0.12)" />
+              <text x={m.l - 6} y={sy(t) + 4} textAnchor="end" fontSize={11} fill="#aab7c9">
+                {Math.round(t)}
+              </text>
+            </g>
+          ))}
+          {[x0, (x0 + x1) / 2, x1].map((t, i) => (
+            <text key={i} x={sx(t)} y={h - 8} textAnchor={i === 0 ? "start" : i === 2 ? "end" : "middle"} fontSize={11} fill="#aab7c9">
+              {xLabel(t)}
+            </text>
+          ))}
+          {(["b", "a"] as const).map((k) => {
+            const pts = runs[k].points;
+            // Best-so-far is a step function: it only changes when a better candidate is found.
+            const d = pts.map((p, i) => `${i ? `H${sx(x(p))}V` : `M${sx(x(p))} `}${sy(p.best)}`).join(" ");
+            return (
+              <g key={k}>
+                <motion.path
+                  d={d}
+                  fill="none"
+                  stroke={RUN_COLORS[k]}
+                  strokeWidth={2}
+                  style={{ filter: `drop-shadow(0 0 5px ${RUN_COLORS[k]})` }}
+                  initial={{ pathLength: 0 }}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.4 }}
+                />
+                {pts.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={sx(x(p))}
+                    cy={sy(p.best)}
+                    r={hover?.k === k && hover.i === i ? 6 : 4}
+                    fill={RUN_COLORS[k]}
+                    stroke="#040a17"
+                    strokeWidth={2}
+                    onMouseEnter={() => setHover({ k, i })}
+                    onMouseLeave={() => setHover(null)}
+                  />
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+        {hp && hover && (
+          <div
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg border border-line-strong bg-night-raised/95 px-3 py-1.5 text-sm text-ink shadow-xl"
+            style={{ left: `${(sx(x(hp)) / w) * 100}%`, top: `${(sy(hp.best) / h) * 100 - 4}%` }}
+          >
+            <div className="font-semibold">{runs[hover.k].label}</div>
+            <div className="tabular-nums">
+              best {hp.best} · {hp.candidates} candidates{hp.seconds != null ? ` · ${xLabel(hp.seconds)}` : ""}
+            </div>
+          </div>
+        )}
+      </div>
+    </figure>
   );
 }

@@ -6,11 +6,11 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } fr
 // Plain SVG rather than a chart library so it renders on the server and needs no measuring to appear.
 // Neutral colors only: green/yellow/red are reserved for safety tiers.
 
-const OURS = "#2a78d6";
-const BASELINE = "#475569";
-const LABEL = "#334155";
-const GRID = "#e2e8f0";
-const AXIS = "#cbd5e1";
+const OURS = "#5eead4";
+const BASELINE = "#aab7c9";
+const LABEL = "#d6deea";
+const GRID = "rgba(186, 206, 235, 0.12)";
+const AXIS = "rgba(186, 206, 235, 0.3)";
 
 export interface RoundPoint {
   round: number;
@@ -113,7 +113,7 @@ export default function ResultsChart({
         onPointerLeave={() => setActive(null)}
         onKeyDown={onKey}
         onBlur={() => setActive(null)}
-        className="block touch-none outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
+        className="block touch-none outline-none focus-visible:ring-4 focus-visible:ring-accent/50"
       >
         {/* Grid + y axis */}
         {ticks.map((t) => (
@@ -148,20 +148,20 @@ export default function ResultsChart({
         ))}
 
         {/* Crosshair */}
-        {a && <line x1={tipLeft} x2={tipLeft} y1={M.top} y2={y(lo)} stroke="#64748b" strokeWidth={1} />}
+        {a && <line x1={tipLeft} x2={tipLeft} y1={M.top} y2={y(lo)} stroke="rgba(241, 245, 249, 0.5)" strokeWidth={1} />}
 
         {/* Our line: 2px stroke, 10px markers with a surface ring, start and end labeled */}
-        <path d={path} fill="none" stroke={OURS} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <path d={path} fill="none" stroke={OURS} style={{ filter: "drop-shadow(0 0 6px rgba(94,234,212,0.8))" }} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => (
-          <circle key={p.round} cx={x(i)} cy={y(p.pct)} r={active === i ? 7 : 5} fill={OURS} stroke="#fff" strokeWidth={2} />
+          <circle key={p.round} cx={x(i)} cy={y(p.pct)} r={active === i ? 7 : 5} fill={OURS} stroke="#040a17" strokeWidth={2} />
         ))}
         {first && points.length > 1 && (
-          <text x={x(0)} y={y(first.pct) - 14} textAnchor="middle" fontSize={15} fontWeight={600} fill="#0f172a">
+          <text x={x(0)} y={y(first.pct) - 14} textAnchor="middle" fontSize={15} fontWeight={600} fill="#f1f5f9">
             {fmt(first.pct)}
           </text>
         )}
         {last && (
-          <text x={x(points.length - 1)} y={y(last.pct) - 14} textAnchor="middle" fontSize={15} fontWeight={600} fill="#0f172a">
+          <text x={x(points.length - 1)} y={y(last.pct) - 14} textAnchor="middle" fontSize={15} fontWeight={600} fill="#f1f5f9">
             {fmt(last.pct)}
           </text>
         )}
@@ -169,14 +169,14 @@ export default function ResultsChart({
 
       {a && (
         <div
-          className="pointer-events-none absolute top-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute top-2 rounded-lg border border-line-strong bg-night-raised/95 px-3 py-2 shadow-xl shadow-black/50"
           style={tipOnLeft ? { right: width - tipLeft + 12 } : { left: tipLeft + 12 }}
         >
-          <div className="text-lg font-bold tabular-nums text-slate-900">{a.pct.toFixed(1)}%</div>
-          <div className="text-sm text-slate-600">Round {a.round} · best so far</div>
-          <div className="font-mono text-xs text-slate-500">{a.id}</div>
+          <div className="text-lg font-bold tabular-nums text-ink">{a.pct.toFixed(1)}%</div>
+          <div className="text-sm text-ink-muted">Round {a.round} · best so far</div>
+          <div className="font-mono text-xs text-ink-faint">{a.id}</div>
           {refs.length > 0 && (
-            <dl className="mt-2 grid grid-cols-[auto_auto] gap-x-3 border-t border-slate-200 pt-2 text-sm text-slate-600">
+            <dl className="mt-2 grid grid-cols-[auto_auto] gap-x-3 border-t border-line pt-2 text-sm text-ink-muted">
               {refs.map((r) => (
                 <div key={r.key} className="contents">
                   <dt>{r.label}</dt>
