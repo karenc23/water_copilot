@@ -158,7 +158,7 @@ function LoadingState({ stage }: { stage: number }) {
   );
 }
 
-function ResultView({ result }: { result: TroubleshootResponse }) {
+export function ResultView({ result }: { result: TroubleshootResponse }) {
   const tier = result.tier;
   const s = TIER_STYLE[tier];
   const meaning = TIER_MEANING[tier];

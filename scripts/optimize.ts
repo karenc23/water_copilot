@@ -4,6 +4,8 @@
 //        npx tsx scripts/optimize.ts --quick  (5 hard train scenarios, 1 round)
 //        npx tsx scripts/optimize.ts --train 20 --rounds 3 --test 10
 //          (subsets are stratified by difficulty and escalation, so the mix stays the same)
+//        npx tsx scripts/optimize.ts --rescore-test
+//          (no rounds: re-score baselines, best expert and r3-s1 from results.json on all test scenarios)
 //
 // Round 0 scores one deliberately generic strategy on data/scenarios_train.json.
 // Each later round asks a critic LLM call for 3 new strategies, based on the current
@@ -740,7 +742,63 @@ async function main() {
   console.log(`\nSaved ${path.relative(process.cwd(), OUT_FILE)} · ${((Date.now() - started) / 1000).toFixed(0)} s total`);
 }
 
-main().catch((err) => {
+/**
+ * --rescore-test: no rounds. Re-scores the baselines, the best expert prompt and r3-s1
+ * (prompts/settings as saved in data/results.json) on ALL test scenarios.
+ */
+async function rescoreTest() {
+  const started = Date.now();
+  const saved = JSON.parse(readFileSync(path.join(DATA_DIR, "results.json"), "utf8"));
+  const toStrategy = (e: { id: string; prompt?: string; settings?: unknown; rationale?: string } | undefined, what: string): Strategy => {
+    const settings = parseSettings(e?.settings);
+    if (!e || typeof e.prompt !== "string" || !settings) throw new AbortRun(`results.json has no usable ${what}`);
+    return { id: e.id, prompt: e.prompt, settings, rationale: e.rationale };
+  };
+  const expertId: string | undefined = saved.test?.expert_reference?.id;
+  const expert = toStrategy((saved.expert_reference ?? []).find((e: { id: string }) => e.id === expertId), `expert "${expertId}"`);
+  const optimized = toStrategy(
+    (saved.rounds ?? []).flatMap((r: { strategies: { id: string }[] }) => r.strategies).find((s: { id: string }) => s.id === "r3-s1"),
+    "strategy r3-s1",
+  );
+
+  console.log(`Re-scoring on all ${allTest.length} test scenarios (${allTest.filter((s) => s.difficulty === "hard").length} hard). No rounds.`);
+  const [plainTest, rulesTest, expertTest, bestTest] = await Promise.all([
+    runPlainLLM(allTest),
+    runRulesOnly(allTest),
+    runStrategy(expert, allTest),
+    runStrategy(optimized, allTest),
+  ]);
+  checkErrorRate("Test set", [plainTest, rulesTest, expertTest, bestTest]);
+  printHeader();
+  printRow("test", "plain LLM", plainTest.metrics);
+  printRow("test", "rules only", rulesTest.metrics);
+  printRow("test", `expert: ${expert.id}`, expertTest.metrics, settingsStr(expert.settings), "reference");
+  printRow("test", `best: ${optimized.id}`, bestTest.metrics, settingsStr(optimized.settings), "optimized");
+
+  const out = path.join(DATA_DIR, "results_test20.json");
+  writeFileSync(
+    out,
+    JSON.stringify(
+      {
+        generated_at: new Date().toISOString(),
+        source: "data/results.json",
+        source_generated_at: saved.generated_at ?? null,
+        test_scenarios: allTest.map((s) => s.id),
+        test: {
+          plain_llm: { ...summary(plainTest), scenarios: plainTest.results.map(compactScenario) },
+          rules_only: { ...summary(rulesTest), scenarios: rulesTest.results.map(compactScenario) },
+          expert_reference: { id: expert.id, settings: expert.settings, ...summary(expertTest), scenarios: expertTest.results.map(compactScenario) },
+          best: { id: optimized.id, settings: optimized.settings, ...summary(bestTest), scenarios: bestTest.results.map(compactScenario) },
+        },
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  console.log(`\nSaved ${path.relative(process.cwd(), out)} · ${((Date.now() - started) / 1000).toFixed(0)} s total`);
+}
+
+(process.argv.includes("--rescore-test") ? rescoreTest() : main()).catch((err) => {
   if (err instanceof AbortRun) console.error(`\n✗ ${err.message}`);
   else console.error(err);
   process.exitCode = 1;

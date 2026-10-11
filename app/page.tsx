@@ -1,15 +1,6 @@
-import Troubleshoot from "@/components/Troubleshoot";
-import { PageHeader } from "@/components/ui";
+import StoryIntro from "@/components/agents/StoryIntro";
 
-// Troubleshoot is the home page.
-export default function TroubleshootPage() {
-  return (
-    <>
-      <PageHeader
-        title="Troubleshoot"
-        subtitle="Get a diagnosis and next steps from the plant manual, checked by fixed safety rules."
-      />
-      <Troubleshoot />
-    </>
-  );
+// Landing: a short story intro that ends in Troubleshoot (/troubleshoot).
+export default function Home() {
+  return <StoryIntro />;
 }

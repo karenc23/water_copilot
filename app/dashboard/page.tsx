@@ -33,7 +33,7 @@ export default function DashboardPage() {
       <Card title="Active alerts" aside={<RuleBadge />} className="mt-6">
         <AlertList alerts={alerts} empty="No active alerts. Everything is within limits." />
         {alerts.length > 0 && (
-          <Link href="/" className="mt-4 inline-block text-base font-semibold text-blue-800 underline underline-offset-4">
+          <Link href="/troubleshoot" className="mt-4 inline-block text-base font-semibold text-blue-800 underline underline-offset-4">
             Troubleshoot this →
           </Link>
         )}

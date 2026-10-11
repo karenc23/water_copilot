@@ -1,6 +1,6 @@
-import { troubleshoot, type TroubleshootOptions } from "@/lib/agents";
+import { troubleshoot, type TroubleshootOptions, type TroubleshootResult } from "@/lib/agents";
 import { checkLogs, checkReadings, getFailureMode, type Alert, type Tier } from "@/lib/rules";
-import { finalTier, type SafeStep } from "@/lib/safety";
+import { finalTier, type SafeStep, type SafetyResult } from "@/lib/safety";
 import type { LogEntry, Reading } from "@/types";
 
 // rules → LLM → safety. Used by /api/troubleshoot and scripts/try-scenarios.ts.
@@ -34,6 +34,17 @@ export interface TroubleshootResponse {
   safety_drops: { invalid_citation: number; dose: number };
 }
 
+/**
+ * Optional observers for each stage, called with the stage's real output as it finishes.
+ * Used by /api/troubleshoot/stream; they never change the result.
+ */
+export interface PipelineTrace {
+  onRules?(alerts: Alert[], asOf: string | undefined): void;
+  onModelStart?(): void;
+  onModel?(llm: TroubleshootResult, ms: number): void;
+  onSafety?(safe: SafetyResult, llm: TroubleshootResult): void;
+}
+
 export async function runTroubleshoot(
   input: {
     plant_id: string;
@@ -43,13 +54,19 @@ export async function runTroubleshoot(
     manualText: string;
   },
   options: TroubleshootOptions = {},
+  trace: PipelineTrace = {},
 ): Promise<TroubleshootResponse> {
   const { plant_id, description, readings, logs, manualText } = input;
   const asOf = latestDate(readings, logs);
 
   const alerts = [...checkReadings(readings), ...checkLogs(logs, asOf)];
+  trace.onRules?.(alerts, asOf);
+  trace.onModelStart?.();
+  const started = Date.now();
   const llm = await troubleshoot(description, readings, logs, manualText, alerts, options);
+  trace.onModel?.(llm, Date.now() - started);
   const safe = finalTier(llm, alerts, manualText, readings);
+  trace.onSafety?.(safe, llm);
 
   return {
     diagnosis: safe.diagnosis,

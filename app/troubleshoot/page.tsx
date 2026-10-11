@@ -1,6 +1,14 @@
-import { redirect } from "next/navigation";
+import TroubleshootViews from "@/components/TroubleshootViews";
+import { PageHeader } from "@/components/ui";
 
-// Troubleshoot lives at "/" (the default page).
-export default function TroubleshootRedirect() {
-  redirect("/");
+export default function TroubleshootPage() {
+  return (
+    <>
+      <PageHeader
+        title="Troubleshoot"
+        subtitle="Get a diagnosis and next steps from the plant manual, checked by fixed safety rules."
+      />
+      <TroubleshootViews />
+    </>
+  );
 }

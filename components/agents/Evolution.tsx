@@ -1,0 +1,664 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import Aurora from "@/components/agents/Aurora";
+import type { EvoStrategy, Evolution as EvolutionData, Outcome, ScenarioCard, TestRow } from "@/components/evolution-data";
+
+// Generations left to right, driven entirely by data/results.json:
+// round 0's single generic strategy → for each later round, the Critic pulls in the parent's
+// worst-scored training scenarios and writes 3 children; the round's best survives.
+
+const W = 1000;
+const H = 480;
+const ORB = 28;
+const TEAL = "#5eead4";
+const GENERIC = "#94a3b8";
+const CRITIC = "#f0abfc";
+
+type Step =
+  | { kind: "gen0" }
+  | { kind: "critic" | "cards" | "spawn" | "scores" | "select"; r: number }
+  | { kind: "test" };
+
+const PHASES = ["critic", "cards", "spawn", "scores", "select"] as const;
+
+const fmt = (o: Outcome) => [o.tier?.toUpperCase(), o.failure_mode].filter(Boolean).join(" ") || "?";
+
+function duration(s: Step, data: EvolutionData): number {
+  switch (s.kind) {
+    case "gen0":
+      return 2400;
+    case "critic":
+      return 1300;
+    case "cards":
+      return 900 + 380 * data.rounds[s.r].worst.length + 1200;
+    case "spawn":
+      return 1700;
+    case "scores":
+      return 1700;
+    case "select":
+      return 2300;
+    default:
+      return 0;
+  }
+}
+
+export default function Evolution({ data }: { data: EvolutionData }) {
+  const { rounds } = data;
+  const steps = useMemo<Step[]>(
+    () => [{ kind: "gen0" }, ...rounds.slice(1).flatMap((rd) => PHASES.map((kind) => ({ kind, r: rd.round }) as Step)), { kind: "test" }],
+    [rounds],
+  );
+  const [step, setStep] = useState(0);
+  const [wantPlaying, setPlaying] = useState(true);
+  const [selected, setSelected] = useState<EvoStrategy | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<number | null>(null);
+
+  const atEnd = step >= steps.length - 1;
+  const playing = wantPlaying && !atEnd;
+
+  useEffect(() => {
+    if (!playing || selected) return;
+    const id = setTimeout(() => setStep((s) => s + 1), duration(steps[step], data));
+    return () => clearTimeout(id);
+  }, [playing, selected, step, steps, data]);
+
+  const idx = (kind: Step["kind"], r?: number) => steps.findIndex((s) => s.kind === kind && (r === undefined || ("r" in s && s.r === r)));
+  const reached = (kind: Step["kind"], r?: number) => {
+    const i = idx(kind, r);
+    return i !== -1 && step >= i;
+  };
+  const cur = steps[step];
+
+  // Layout: one column per generation.
+  const gens = rounds.length;
+  const colX = (g: number) => 80 + (g * (W - 160)) / Math.max(1, gens - 1);
+  const ys = (n: number) => (n === 1 ? [255] : Array.from({ length: n }, (_, i) => 120 + (i * 270) / (n - 1)));
+  const pos = new Map<string, { x: number; y: number }>();
+  rounds.forEach((rd, g) => rd.strategies.forEach((s, i) => pos.set(s.id, { x: colX(g), y: ys(rd.strategies.length)[i] })));
+  const all = rounds.flatMap((rd) => rd.strategies);
+  const byId = new Map(all.map((s) => [s.id, s]));
+
+  const trainMax = data.trainMax;
+
+  // Best-so-far line, one point per generation.
+  const points = rounds.flatMap((rd, g) => {
+    const best = rd.bestId ? byId.get(rd.bestId) : undefined;
+    return best ? [{ g, x: colX(g), score: best.score, id: best.id, shown: g === 0 ? reached("gen0") : reached("select", rd.round) }] : [];
+  });
+
+  const caption = captionFor(cur, data, byId);
+  return (
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-[#040a17] text-white shadow-xl ring-1 ring-white/10">
+        <Aurora />
+
+        <div className="relative z-10 flex flex-wrap items-center gap-3 border-b border-white/10 p-4">
+          <button
+            type="button"
+            onClick={() => {
+              if (atEnd) setStep(0);
+              setPlaying(atEnd ? true : !playing);
+            }}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-teal-300 px-5 text-base font-bold text-[#04121f] hover:bg-teal-200"
+          >
+            {playing ? (
+              <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden>
+                <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden>
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+            {playing ? "Pause" : atEnd ? "Play again" : "Play"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStep(0);
+              setPlaying(true);
+            }}
+            className="min-h-11 rounded-full border border-white/25 px-4 text-sm font-semibold hover:bg-white/10"
+          >
+            Restart
+          </button>
+          {!atEnd && (
+            <button
+              type="button"
+              onClick={() => {
+                setStep(steps.length - 1);
+                setPlaying(false);
+              }}
+              className="min-h-11 rounded-full border border-white/25 px-4 text-sm font-semibold hover:bg-white/10"
+            >
+              Jump to the end
+            </button>
+          )}
+          <div className="min-w-0 flex-1 basis-64" aria-live="polite">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={step}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="text-base text-slate-200"
+              >
+                {caption}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+          <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+            <motion.div className="h-full bg-teal-300" animate={{ width: `${(step / Math.max(1, steps.length - 1)) * 100}%` }} transition={{ duration: 0.5 }} />
+          </div>
+        </div>
+
+        {/* Generations */}
+        <div className="relative z-10">
+          <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Prompt strategies evolving over rounds">
+            {rounds.map((rd, g) => (
+              <text key={rd.round} x={colX(g)} y={34} textAnchor="middle" fontSize={15} fontWeight={600} fill="#cbd5e1" letterSpacing={1.5}>
+                ROUND {rd.round}
+              </text>
+            ))}
+
+            {rounds.slice(1).map((rd, i) => {
+              const g = i + 1;
+              const cx = (colX(g - 1) + colX(g)) / 2;
+              const cy = 120;
+              const parent = rd.parentId ? pos.get(rd.parentId) : undefined;
+              const showCritic = reached("critic", rd.round);
+              const showCards = reached("cards", rd.round) && !reached("spawn", rd.round);
+              const spawned = reached("spawn", rd.round);
+              const scored = reached("scores", rd.round);
+              const selectedNow = reached("select", rd.round);
+              return (
+                <g key={rd.round}>
+                  {showCritic && parent && (
+                    <motion.path
+                      d={`M${parent.x} ${parent.y} Q${(parent.x + cx) / 2} ${Math.min(parent.y, cy) - 30} ${cx} ${cy}`}
+                      fill="none"
+                      stroke={CRITIC}
+                      strokeOpacity={selectedNow ? 0.18 : 0.45}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 6"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.8 }}
+                    />
+                  )}
+                  {spawned &&
+                    rd.strategies.map((s) => {
+                      const p = pos.get(s.id)!;
+                      const win = selectedNow && rd.bestId === s.id;
+                      return (
+                        <motion.path
+                          key={s.id}
+                          d={`M${cx} ${cy} Q${cx + 40} ${p.y} ${p.x} ${p.y}`}
+                          fill="none"
+                          stroke={TEAL}
+                          strokeWidth={win ? 2.5 : 1.5}
+                          initial={{ pathLength: 0, opacity: 0.6 }}
+                          animate={{ pathLength: 1, opacity: selectedNow ? (win ? 0.8 : 0.08) : 0.45 }}
+                          transition={{ duration: 0.9 }}
+                        />
+                      );
+                    })}
+
+                  <AnimatePresence>
+                    {showCritic && (
+                      <motion.g
+                        key="critic"
+                        initial={{ opacity: 0, scale: 0.4 }}
+                        animate={{ opacity: selectedNow ? 0.4 : 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                        style={{ transformOrigin: `${cx}px ${cy}px` }}
+                      >
+                        <circle cx={cx} cy={cy} r={50} fill={CRITIC} opacity={0.12} />
+                        <circle cx={cx} cy={cy} r={22} fill={CRITIC} opacity={0.9} />
+                        <circle cx={cx - 6} cy={cy - 7} r={7} fill="#fff" opacity={0.7} />
+                        <text x={cx} y={cy - 32} textAnchor="middle" fontSize={14} fontWeight={700} fill={CRITIC}>
+                          Critic
+                        </text>
+                      </motion.g>
+                    )}
+                  </AnimatePresence>
+
+                  <AnimatePresence>
+                    {showCards &&
+                      rd.worst.map((c, k) => (
+                        <ScenarioChip key={`${rd.round}-${c.id}`} card={c} from={parent ?? { x: cx, y: cy }} to={{ x: cx, y: 190 + k * 50 }} delay={0.15 + k * 0.38} />
+                      ))}
+                  </AnimatePresence>
+
+                  {spawned &&
+                    rd.strategies.map((s, k) => (
+                      <StrategyOrb
+                        key={s.id}
+                        s={s}
+                        from={{ x: cx, y: cy }}
+                        at={pos.get(s.id)!}
+                        delay={k * 0.18}
+                        showScore={scored}
+                        state={!selectedNow ? "live" : rd.bestId === s.id ? "winner" : "loser"}
+                        max={trainMax}
+                        onOpen={() => setSelected(s)}
+                      />
+                    ))}
+                </g>
+              );
+            })}
+
+            {rounds[0]?.strategies.map((s) => (
+              <StrategyOrb
+                key={s.id}
+                s={s}
+                from={pos.get(s.id)!}
+                at={pos.get(s.id)!}
+                delay={0.2}
+                showScore
+                state={rounds[1] && reached("select", rounds[1].round) && rounds[1].bestId !== s.id ? "retired" : "winner"}
+                color={GENERIC}
+                max={trainMax}
+                onOpen={() => setSelected(s)}
+              />
+            ))}
+          </svg>
+          <p className="px-4 pb-2 text-center text-sm text-slate-400">Click any strategy orb to read its full prompt.</p>
+        </div>
+
+        {/* Score line */}
+        <ScoreLine
+          points={points}
+          trainMax={trainMax}
+          expert={data.expertTrain}
+          hover={hoverPoint}
+          setHover={setHoverPoint}
+        />
+      </div>
+
+      <AnimatePresence>
+        {reached("test") && data.test.length > 0 && (
+          <motion.section
+            key="test"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: "spring", stiffness: 110, damping: 20 }}
+          >
+            <TestComparison rows={data.test} count={data.testCount} />
+          </motion.section>
+        )}
+      </AnimatePresence>
+
+      <PromptPanel s={selected} max={trainMax} onClose={() => setSelected(null)} />
+    </div>
+  );
+}
+
+function captionFor(s: Step, data: EvolutionData, byId: Map<string, EvoStrategy>): string {
+  const r0 = data.rounds[0]?.strategies[0];
+  const of = data.trainMax ? ` / ${data.trainMax}` : "";
+  switch (s.kind) {
+    case "gen0":
+      return r0 ? `Round 0: one deliberately generic prompt, “${r0.prompt ?? r0.id}”, scores ${r0.score}${of} on the training scenarios.` : "Round 0";
+    case "test":
+      return `Final exam: ${data.testCount ?? "the"} test scenarios no strategy ever saw.`;
+  }
+  const rd = data.rounds.find((x) => x.round === s.r)!;
+  const parent = rd.parentId ? byId.get(rd.parentId) : undefined;
+  switch (s.kind) {
+    case "critic":
+      return `Round ${rd.round}: the Critic studies ${parent?.id ?? "the current best"}, the best strategy so far.`;
+    case "cards":
+      return rd.worst.length
+        ? `It pulls in ${parent?.id ?? "its"}’s ${rd.worst.length} worst-scored scenarios: what was expected vs. what it got.`
+        : "No failed scenarios to learn from.";
+    case "spawn":
+      return `It writes ${rd.strategies.length} new strategies, each a different fix.`;
+    case "scores":
+      return `Each child is scored on the same training scenarios.`;
+    case "select": {
+      const best = rd.bestId ? byId.get(rd.bestId) : undefined;
+      if (!best) return "No strategy qualified this round.";
+      if (best.round !== rd.round) return `No child beat ${best.id} (${best.score}${of}); it survives.`;
+      const delta = parent ? best.score - parent.score : null;
+      return `${best.id} survives with ${best.score}${of}${delta !== null ? ` (${delta >= 0 ? "+" : ""}${delta})` : ""}. The others fade.`;
+    }
+  }
+}
+
+function ScenarioChip({ card, from, to, delay }: { card: ScenarioCard; from: { x: number; y: number }; to: { x: number; y: number }; delay: number }) {
+  const w = 200;
+  const h = 42;
+  return (
+    <motion.g
+      initial={{ x: from.x - w / 2, y: from.y - h / 2, opacity: 0, scale: 0.5 }}
+      animate={{ x: to.x - w / 2, y: to.y - h / 2, opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.4 } }}
+      transition={{ duration: 0.9, delay, ease: [0.3, 0, 0.2, 1] }}
+    >
+      <rect width={w} height={h} rx={8} fill="#0b1426" fillOpacity={0.92} stroke={CRITIC} strokeOpacity={0.6} />
+      <text x={10} y={17} fontSize={13} fontWeight={700} fill="#fff">
+        {card.id}
+        {card.hard ? " · hard" : ""}
+      </text>
+      <text x={w - 10} y={17} fontSize={13} textAnchor="end" fill="#cbd5e1">
+        {card.score}/{card.max}
+      </text>
+      <text x={10} y={34} fontSize={12} fill="#cbd5e1">
+        exp {fmt(card.expected)} → got {fmt(card.got)}
+      </text>
+    </motion.g>
+  );
+}
+
+function StrategyOrb({
+  s,
+  from,
+  at,
+  delay,
+  showScore,
+  state,
+  color = TEAL,
+  max,
+  onOpen,
+}: {
+  s: EvoStrategy;
+  from: { x: number; y: number };
+  at: { x: number; y: number };
+  delay: number;
+  showScore: boolean;
+  state: "live" | "winner" | "loser" | "retired";
+  color?: string;
+  max: number | null;
+  onOpen: () => void;
+}) {
+  const scale = state === "winner" ? 1.35 : 1;
+  const opacity = state === "loser" ? 0.2 : state === "retired" ? 0.55 : 1;
+  return (
+    <motion.g
+      role="button"
+      tabIndex={0}
+      aria-label={`${s.id}: score ${s.score}${max ? ` of ${max}` : ""}. Show prompt.`}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="cursor-pointer outline-none"
+      initial={{ x: from.x, y: from.y, opacity: 0 }}
+      animate={{ x: at.x, y: at.y, opacity }}
+      transition={{ duration: 0.9, delay, ease: [0.3, 0, 0.2, 1] }}
+    >
+      <motion.g initial={{ scale: 0.2 }} animate={{ scale }} transition={{ type: "spring", stiffness: 160, damping: 14, delay }}>
+        <circle r={ORB * 2.2} fill={color} opacity={state === "winner" ? 0.16 : 0.07} />
+        <circle r={ORB} fill={color} opacity={0.9} />
+        <circle cx={-8} cy={-9} r={8} fill="#fff" opacity={0.65} />
+        {state === "winner" && <circle r={ORB + 7} fill="none" stroke={color} strokeWidth={2} strokeDasharray="3 5" />}
+      </motion.g>
+      <text y={ORB * scale + 22} textAnchor="middle" fontSize={13} fill="#cbd5e1">
+        {s.id}
+      </text>
+      <AnimatePresence>
+        {showScore && (
+          <motion.text
+            initial={{ opacity: 0, y: ORB * scale + 30 }}
+            animate={{ opacity: 1, y: ORB * scale + 42 }}
+            textAnchor="middle"
+            fontSize={19}
+            fontWeight={800}
+            fill="#fff"
+          >
+            {s.score}
+          </motion.text>
+        )}
+      </AnimatePresence>
+    </motion.g>
+  );
+}
+
+function ScoreLine({
+  points,
+  trainMax,
+  expert,
+  hover,
+  setHover,
+}: {
+  points: { g: number; x: number; score: number; id: string; shown: boolean }[];
+  trainMax: number | null;
+  expert: { id: string; score: number } | null;
+  hover: number | null;
+  setHover: (g: number | null) => void;
+}) {
+  const h = 190;
+  const top = 26;
+  const bottom = h - 34;
+  const values = [...points.map((p) => p.score), ...(expert ? [expert.score] : [])];
+  if (!values.length) return null;
+  const hi = trainMax ?? Math.max(...values) + 10;
+  const lo = Math.max(0, Math.floor((Math.min(...values) - 15) / 10) * 10);
+  const y = (v: number) => bottom - ((v - lo) / (hi - lo || 1)) * (bottom - top);
+  const shown = points.filter((p) => p.shown);
+  const d = shown.map((p, i) => `${i ? "L" : "M"}${p.x} ${y(p.score)}`).join(" ");
+  const hp = points.find((p) => p.g === hover && p.shown);
+
+  return (
+    <div className="relative z-10 border-t border-white/10 px-1 pt-2 pb-3">
+      <p className="px-3 text-sm font-semibold text-slate-300">
+        Best training score so far <span className="font-normal text-slate-400">(axis starts at {lo}{trainMax ? `, max ${trainMax}` : ""})</span>
+      </p>
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${h}`} className="block h-auto w-full" role="img" aria-label="Best training score per round">
+          {[lo, Math.round((lo + hi) / 2), hi].map((t) => (
+            <g key={t}>
+              <line x1={40} x2={W - 20} y1={y(t)} y2={y(t)} stroke="#fff" strokeOpacity={0.08} />
+              <text x={34} y={y(t) + 4} textAnchor="end" fontSize={12} fill="#94a3b8">
+                {t}
+              </text>
+            </g>
+          ))}
+          {expert && (
+            <g>
+              <line x1={40} x2={W - 20} y1={y(expert.score)} y2={y(expert.score)} stroke="#cbd5e1" strokeOpacity={0.6} strokeDasharray="6 6" strokeWidth={1.5} />
+              <text x={W - 22} y={y(expert.score) + 16} textAnchor="end" fontSize={12} fill="#cbd5e1">
+                Best expert prompt: {expert.score}
+              </text>
+            </g>
+          )}
+          {shown.length > 1 && <motion.path key={shown.length} d={d} fill="none" stroke={TEAL} strokeWidth={2} initial={{ pathLength: 0.6 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8 }} />}
+          {shown.map((p) => (
+            <g key={p.g}>
+              <motion.circle cx={p.x} cy={y(p.score)} r={5} fill={TEAL} stroke="#040a17" strokeWidth={2} initial={{ r: 0 }} animate={{ r: hover === p.g ? 7 : 5 }} />
+              <text x={p.x} y={y(p.score) - 12} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">
+                {p.score}
+              </text>
+              <circle
+                cx={p.x}
+                cy={y(p.score)}
+                r={20}
+                fill="transparent"
+                onMouseEnter={() => setHover(p.g)}
+                onMouseLeave={() => setHover(null)}
+              />
+            </g>
+          ))}
+          {points.map((p) => (
+            <text key={`x${p.g}`} x={p.x} y={h - 10} textAnchor="middle" fontSize={12} fill="#94a3b8">
+              Round {p.g}
+            </text>
+          ))}
+        </svg>
+        {hp && (
+          <div
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg bg-white px-3 py-1.5 text-sm text-slate-900 shadow-lg"
+            style={{ left: `${(hp.x / W) * 100}%`, top: `${(y(hp.score) / h) * 100 - 6}%` }}
+          >
+            <div className="font-semibold">Round {hp.g}</div>
+            <div>
+              {hp.id}: {hp.score}
+              {trainMax ? ` / ${trainMax}` : ""}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TestComparison({ rows, count }: { rows: TestRow[]; count: number | null }) {
+  const dangerous = rows[0]?.dangerous ?? 0;
+  const safe = rows[0]?.safe ?? 0;
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+      <h2 className="text-2xl font-bold text-slate-900">On scenarios it never saw</h2>
+      <p className="mt-1 text-base text-slate-600">
+        {count ?? "The"} held-out test scenarios: {dangerous} truly dangerous (should escalate), {safe} not. Lower is better on both.
+      </p>
+      <div className="mt-6 grid gap-8 md:grid-cols-2">
+        <RateChart
+          title="Missed danger"
+          detail="Dangerous scenarios it failed to escalate"
+          rows={rows}
+          value={(r) => (r.dangerous ? r.missed / r.dangerous : 0)}
+          label={(r) => `${r.missed} of ${r.dangerous}`}
+        />
+        <RateChart
+          title="False alarms"
+          detail="Safe scenarios it escalated anyway"
+          rows={rows}
+          value={(r) => (r.safe ? r.falseAlarms / r.safe : 0)}
+          label={(r) => `${r.falseAlarms} of ${r.safe}`}
+        />
+      </div>
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {rows.map((r) => (
+          <div key={r.key} className={`rounded-xl p-3 ${r.key === "evolved" ? "bg-teal-50 ring-2 ring-teal-600" : "bg-slate-50"}`}>
+            <div className="text-sm font-semibold text-slate-600">{r.label}</div>
+            <div className="text-2xl font-black text-slate-900 tabular-nums">
+              {r.score}
+              {r.max ? <span className="text-base font-semibold text-slate-500"> / {r.max}</span> : null}
+            </div>
+            <div className="text-xs text-slate-500">test score</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RateChart({
+  title,
+  detail,
+  rows,
+  value,
+  label,
+}: {
+  title: string;
+  detail: string;
+  rows: TestRow[];
+  value: (r: TestRow) => number;
+  label: (r: TestRow) => string;
+}) {
+  return (
+    <div>
+      <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+      <p className="text-sm text-slate-600">{detail}</p>
+      <ul className="mt-3 space-y-2.5">
+        {rows.map((r, i) => {
+          const v = value(r);
+          const ours = r.key === "evolved";
+          return (
+            <li key={r.key} className="grid grid-cols-[7.5rem_1fr_4.5rem] items-center gap-3" title={`${r.label}: ${label(r)} (${Math.round(v * 100)}%)`}>
+              <span className={`text-sm ${ours ? "font-bold text-slate-900" : "text-slate-700"}`}>{r.label}</span>
+              <span className="h-5 rounded bg-slate-100">
+                <motion.span
+                  className={`block h-full rounded ${ours ? "bg-teal-600" : "bg-slate-400"}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: v ? `${v * 100}%` : "3px" }}
+                  transition={{ duration: 0.8, delay: 0.2 + i * 0.12 }}
+                />
+              </span>
+              <span className="text-right text-sm text-slate-800 tabular-nums">
+                <span className="font-semibold">{Math.round(v * 100)}%</span> <span className="text-slate-500">{label(r)}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number | null; onClose: () => void }) {
+  useEffect(() => {
+    if (!s) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [s, onClose]);
+
+  return (
+    <AnimatePresence>
+      {s && (
+        <motion.div
+          key="panel"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-4 md:items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="prompt-title"
+            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            initial={{ y: 40, scale: 0.97 }}
+            animate={{ y: 0, scale: 1 }}
+            exit={{ y: 40, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="prompt-title" className="text-2xl font-bold text-slate-900">
+                  {s.id}
+                </h2>
+                <p className="text-base text-slate-600">
+                  Round {s.round} · training score {s.score}
+                  {max ? ` / ${max}` : ""}
+                  {s.metrics.escalation_recall !== undefined && ` · caught ${Math.round(s.metrics.escalation_recall * 100)}% of dangers`}
+                  {s.metrics.false_alarms !== undefined && ` · ${s.metrics.false_alarms} false alarms`}
+                </p>
+              </div>
+              <button type="button" onClick={onClose} autoFocus className="min-h-11 rounded-lg border border-slate-300 px-4 text-base font-semibold text-slate-800 hover:bg-slate-50">
+                Close
+              </button>
+            </div>
+            {s.rationale && (
+              <>
+                <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">Why the Critic wrote it</h3>
+                <p className="mt-1 text-base leading-relaxed text-slate-800">{s.rationale}</p>
+              </>
+            )}
+            {Object.keys(s.settings).length > 0 && (
+              <p className="mt-4 flex flex-wrap gap-2">
+                {Object.entries(s.settings).map(([k, v]) => (
+                  <span key={k} className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-sm text-slate-700">
+                    {k}: {String(v)}
+                  </span>
+                ))}
+              </p>
+            )}
+            <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">Full prompt</h3>
+            <pre className="mt-1 rounded-lg bg-slate-50 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-slate-900">{s.prompt ?? "(not recorded)"}</pre>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}

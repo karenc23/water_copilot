@@ -31,3 +31,46 @@ body {
   outline: 3px solid #1d4ed8;
   outline-offset: 2px;
 }
+
+/* ---- Agent Room / Evolution / story intro: Arctic-night aurora (components/agents/Aurora.tsx) ---- */
+.aurora-band {
+  position: absolute;
+  left: -25%;
+  width: 150%;
+  height: 60%;
+  border-radius: 50%;
+  opacity: 0.75;
+  will-change: transform;
+}
+.aurora-a {
+  top: -18%;
+  background: radial-gradient(50% 40% at 50% 50%, rgba(45, 212, 191, 0.5), transparent 70%);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+.aurora-b {
+  top: -8%;
+  background: radial-gradient(40% 30% at 35% 50%, rgba(129, 140, 248, 0.38), transparent 70%);
+  animation: aurora-drift 24s ease-in-out infinite alternate-reverse;
+}
+.aurora-c {
+  top: 2%;
+  background: radial-gradient(35% 25% at 70% 50%, rgba(74, 222, 128, 0.3), transparent 70%);
+  animation: aurora-drift 30s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  0% { transform: translate3d(-6%, 0, 0) rotate(-3deg) scaleY(1); }
+  50% { transform: translate3d(3%, 3%, 0) rotate(2deg) scaleY(1.15); }
+  100% { transform: translate3d(7%, -2%, 0) rotate(-1deg) scaleY(0.95); }
+}
+.aurora-star {
+  animation: twinkle 5s ease-in-out infinite;
+}
+@keyframes twinkle {
+  50% { opacity: 0.1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-band,
+  .aurora-star {
+    animation: none;
+  }
+}

@@ -11,7 +11,7 @@ const RESULTS_FILE = path.join(process.cwd(), "data", "results.json");
 export default function ResultsPage() {
   return (
     <>
-      <PageHeader title="Results" subtitle="How the prompt optimizer did against plain LLM and rules-only baselines." />
+      <PageHeader title="Results" subtitle="How the prompt optimizer did against a plain LLM, rules only, and our hand-written expert prompt." />
       <Suspense fallback={<Loading />}>
         <ResultsContent />
       </Suspense>
@@ -55,15 +55,22 @@ async function ResultsContent() {
   }
   const r = loaded.results;
   const points = r.rounds.flatMap((rd) => (rd.best?.pct != null ? [{ round: rd.round, pct: rd.best.pct, id: rd.best.id }] : []));
+  const rewrites = Math.max(r.rounds.length - 1, 0);
 
   return (
     <div className="space-y-6">
-      <Card title="Unseen test scenarios" aside={<span className="text-base text-slate-600">Scenarios the optimizer never saw</span>}>
+      <Summary rewrites={rewrites} ours={r.test.best} expert={r.test.expert} />
+
+      <Card
+        title="Unseen test scenarios"
+        aside={<span className="text-base text-slate-600">{r.test.count ? `${r.test.count} scenarios` : "Scenarios"} the optimizer never saw</span>}
+      >
         {r.test.plain || r.test.rules || r.test.best ? (
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <BigNumber label="Plain LLM" score={r.test.plain} />
             <BigNumber label="Rules only" score={r.test.rules} />
-            <BigNumber label="Our best" score={r.test.best} highlight sub={r.test.best?.id ?? undefined} />
+            <BigNumber label="Expert prompt" score={r.test.expert} sub={r.test.expert?.id ?? undefined} />
+            <BigNumber label="Ours" score={r.test.best} highlight sub={r.test.best?.id ?? undefined} />
           </div>
         ) : (
           <p className="text-lg text-slate-600">Test results aren’t in yet. They’re written when the run finishes.</p>
@@ -71,7 +78,7 @@ async function ResultsContent() {
       </Card>
 
       <Card
-        title="Best score per round (training scenarios)"
+        title="Best score so far, per round (training scenarios)"
         aside={
           <span className="text-base text-slate-600">
             {r.generatedAt && `Updated ${new Date(r.generatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
@@ -80,19 +87,62 @@ async function ResultsContent() {
         }
       >
         {points.length ? (
-          <ResultsChart points={points} plainPct={r.baselines.plain?.pct ?? null} rulesPct={r.baselines.rules?.pct ?? null} />
+          <ResultsChart
+            points={points}
+            plainPct={r.baselines.plain?.pct ?? null}
+            rulesPct={r.baselines.rules?.pct ?? null}
+            expertPct={r.baselines.expert?.pct ?? null}
+          />
         ) : (
           <p className="text-lg text-slate-600">No scored rounds yet.</p>
         )}
         <p className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
           <span className="inline-flex items-center gap-2">
-            <span className="h-[3px] w-6 rounded bg-[#2a78d6]" /> Best strategy that round
+            <span className="h-[3px] w-6 rounded bg-[#2a78d6]" /> Best strategy so far
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="w-6 border-t-2 border-dashed border-slate-600" /> Baselines
+            <span className="w-6 border-t-2 border-dashed border-slate-600" /> Reference: plain LLM, rules only, expert prompt
           </span>
           <span>Score as % of the maximum possible points.</span>
         </p>
+        {points.length > 0 && (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-base font-semibold text-blue-800 underline underline-offset-4">Show as a table</summary>
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-left text-base tabular-nums">
+                <thead className="text-slate-600">
+                  <tr>
+                    <th className="py-1 pr-4 font-semibold">Round</th>
+                    <th className="py-1 pr-4 font-semibold">Best so far</th>
+                    <th className="py-1 pr-4 font-semibold">Strategy</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-900">
+                  {points.map((p) => (
+                    <tr key={p.round} className="border-t border-slate-200">
+                      <td className="py-1 pr-4">{p.round}</td>
+                      <td className="py-1 pr-4">{Math.round(p.pct)}%</td>
+                      <td className="py-1 pr-4 font-mono text-sm">{p.id}</td>
+                    </tr>
+                  ))}
+                  {[
+                    ["Expert prompt (reference)", r.baselines.expert],
+                    ["Rules only (reference)", r.baselines.rules],
+                    ["Plain LLM (reference)", r.baselines.plain],
+                  ].map(([label, s]) =>
+                    s && typeof s === "object" ? (
+                      <tr key={label as string} className="border-t border-slate-200 text-slate-600">
+                        <td className="py-1 pr-4">{label as string}</td>
+                        <td className="py-1 pr-4">{pct(s)}</td>
+                        <td className="py-1 pr-4" />
+                      </tr>
+                    ) : null,
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        )}
       </Card>
 
       <Card title="Strategies tried">
@@ -128,8 +178,29 @@ function pct(s: Score): string {
   return s.pct != null ? `${Math.round(s.pct)}%` : `${s.score} pts`;
 }
 
+/** The headline sentence. Only claims a win over the expert prompt if the test numbers show one. */
+function Summary({ rewrites, ours, expert }: { rewrites: number; ours: Score | null; expert: Score | null }) {
+  if (!ours || !rewrites) return null;
+  const times = rewrites === 1 ? "once" : `${rewrites} times`;
+  const outcome =
+    !expert ? "" : ours.score > expert.score
+      ? "; the final version beat our hand-written expert prompt on unseen scenarios"
+      : ours.score === expert.score
+        ? "; the final version tied our hand-written expert prompt on unseen scenarios"
+        : "; the final version did not beat our hand-written expert prompt on unseen scenarios";
+  return (
+    <p className="text-xl leading-relaxed text-slate-800">
+      Starting from a generic prompt, a critic agent rewrote the strategy {times}
+      {outcome}.
+    </p>
+  );
+}
+
+const rate = (x: number | undefined) => (x == null ? "—" : `${Math.round(x * 100)}%`);
+
 function BigNumber({ label, score, highlight, sub }: { label: string; score: Score | null; highlight?: boolean; sub?: string }) {
-  const missed = score?.metrics.missed_escalations;
+  const recall = score?.metrics.escalation_recall;
+  const falseAlarm = score?.metrics.false_alarm_rate;
   return (
     <div className={`rounded-xl p-5 ${highlight ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-900"}`}>
       <div className={`text-lg font-semibold ${highlight ? "text-blue-50" : "text-slate-700"}`}>{label}</div>
@@ -140,11 +211,12 @@ function BigNumber({ label, score, highlight, sub }: { label: string; score: Sco
             {score.score}
             {score.max != null && ` / ${score.max}`} points
           </div>
-          {missed != null && (
-            <div>
-              {missed} missed escalation{missed === 1 ? "" : "s"}
-            </div>
-          )}
+          <dl className="grid grid-cols-[1fr_auto] gap-x-3 whitespace-nowrap">
+            <dt>Missed danger</dt>
+            <dd className="text-right font-semibold tabular-nums">{rate(recall == null ? undefined : 1 - recall)}</dd>
+            <dt>False alarms</dt>
+            <dd className="text-right font-semibold tabular-nums">{rate(falseAlarm)}</dd>
+          </dl>
           {sub && <div className="font-mono text-sm opacity-80">{sub}</div>}
         </div>
       )}

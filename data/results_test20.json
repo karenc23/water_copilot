@@ -1,0 +1,1885 @@
+{
+  "generated_at": "2026-10-11T19:31:21.902Z",
+  "source": "data/results.json",
+  "source_generated_at": "2026-10-11T19:08:58.523Z",
+  "test_scenarios": [
+    "test-01",
+    "test-02",
+    "test-03",
+    "test-04",
+    "test-05",
+    "test-06",
+    "test-07",
+    "test-08",
+    "test-09",
+    "test-10",
+    "test-11",
+    "test-12",
+    "test-13",
+    "test-14",
+    "test-15",
+    "test-16",
+    "test-17",
+    "test-18",
+    "test-19",
+    "test-20"
+  ],
+  "test": {
+    "plain_llm": {
+      "score": 25,
+      "metrics": {
+        "score": 25,
+        "max_score": 220,
+        "hard_score": "-10/66",
+        "escalation_recall": 0.875,
+        "false_alarm_rate": 0.167,
+        "tier_accuracy": 0.85,
+        "failure_mode_accuracy": 0.85,
+        "key_step_coverage": 0.2,
+        "missed_escalations": 1,
+        "false_alarms": 2,
+        "dropped_steps": 97,
+        "errors": 0,
+        "judge_errors": 0,
+        "avg_seconds": 3.163
+      },
+      "scenarios": [
+        {
+          "id": "test-01",
+          "difficulty": "standard",
+          "score": 0,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 7
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-02",
+          "difficulty": "standard",
+          "score": -1,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 8
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-03",
+          "difficulty": "standard",
+          "score": 2,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10",
+            "drops": 5
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-04",
+          "difficulty": "standard",
+          "score": 5,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12",
+            "drops": 2
+          },
+          "covered": [
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-05",
+          "difficulty": "standard",
+          "score": -1,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7",
+            "drops": 8
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-06",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10",
+            "drops": 5
+          },
+          "covered": [
+            false,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-07",
+          "difficulty": "standard",
+          "score": 6,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6",
+            "drops": 1
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-08",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 5
+          },
+          "covered": [
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-09",
+          "difficulty": "standard",
+          "score": -3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "yellow",
+            "failure_mode": "F12",
+            "drops": 5
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-10",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 4
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-11",
+          "difficulty": "hard",
+          "score": 0,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12",
+            "drops": 7
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-12",
+          "difficulty": "hard",
+          "score": 2,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "yellow",
+            "failure_mode": "F13",
+            "drops": 5
+          },
+          "covered": [
+            false,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-13",
+          "difficulty": "hard",
+          "score": 5,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8",
+            "drops": 5
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-14",
+          "difficulty": "hard",
+          "score": -11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F3"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F2",
+            "drops": 5
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-15",
+          "difficulty": "hard",
+          "score": -6,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 4
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-16",
+          "difficulty": "hard",
+          "score": 0,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4",
+            "drops": 7
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-17",
+          "difficulty": "standard",
+          "score": 2,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 6
+          },
+          "covered": [
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-18",
+          "difficulty": "standard",
+          "score": 6,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 1
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-19",
+          "difficulty": "standard",
+          "score": 6,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6",
+            "drops": 2
+          },
+          "covered": [
+            false,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-20",
+          "difficulty": "standard",
+          "score": 4,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10",
+            "drops": 5
+          },
+          "covered": [
+            true,
+            true,
+            false
+          ]
+        }
+      ]
+    },
+    "rules_only": {
+      "score": 71,
+      "metrics": {
+        "score": 71,
+        "max_score": 220,
+        "hard_score": "-2/66",
+        "escalation_recall": 0.5,
+        "false_alarm_rate": 0,
+        "tier_accuracy": 0.5,
+        "failure_mode_accuracy": 0.45,
+        "key_step_coverage": 0.033,
+        "missed_escalations": 4,
+        "false_alarms": 0,
+        "dropped_steps": 0,
+        "errors": 0,
+        "judge_errors": 0,
+        "avg_seconds": 0.001
+      },
+      "scenarios": [
+        {
+          "id": "test-01",
+          "difficulty": "standard",
+          "score": 8,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-02",
+          "difficulty": "standard",
+          "score": 7,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-03",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-04",
+          "difficulty": "standard",
+          "score": 8,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-05",
+          "difficulty": "standard",
+          "score": 8,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-06",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-07",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-08",
+          "difficulty": "standard",
+          "score": -6,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-09",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-10",
+          "difficulty": "standard",
+          "score": 7,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-11",
+          "difficulty": "hard",
+          "score": -6,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-12",
+          "difficulty": "hard",
+          "score": -6,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-13",
+          "difficulty": "hard",
+          "score": 5,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-14",
+          "difficulty": "hard",
+          "score": -6,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F3"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-15",
+          "difficulty": "hard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-16",
+          "difficulty": "hard",
+          "score": 8,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-17",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-18",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-19",
+          "difficulty": "standard",
+          "score": 8,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-20",
+          "difficulty": "standard",
+          "score": 3,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    "expert_reference": {
+      "id": "expert-diagnose-carefully",
+      "settings": {
+        "context_order": "logbook_first",
+        "max_steps": 5,
+        "reasoning_effort": "low"
+      },
+      "score": 185,
+      "metrics": {
+        "score": 185,
+        "max_score": 220,
+        "hard_score": "64/66",
+        "escalation_recall": 1,
+        "false_alarm_rate": 0.167,
+        "tier_accuracy": 0.85,
+        "failure_mode_accuracy": 0.95,
+        "key_step_coverage": 0.733,
+        "missed_escalations": 0,
+        "false_alarms": 2,
+        "dropped_steps": 1,
+        "errors": 0,
+        "judge_errors": 0,
+        "avg_seconds": 10.113
+      },
+      "scenarios": [
+        {
+          "id": "test-01",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-02",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-03",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-04",
+          "difficulty": "standard",
+          "score": 4,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F9",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-05",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-06",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-07",
+          "difficulty": "standard",
+          "score": 5,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-08",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-09",
+          "difficulty": "standard",
+          "score": 4,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-10",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-11",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-12",
+          "difficulty": "hard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-13",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-14",
+          "difficulty": "hard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F3"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F3",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-15",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-16",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-17",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-18",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-19",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6",
+            "drops": 1
+          },
+          "covered": [
+            true,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-20",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    "best": {
+      "id": "r3-s1",
+      "settings": {
+        "context_order": "description_first",
+        "max_steps": 5,
+        "reasoning_effort": "low"
+      },
+      "score": 198,
+      "metrics": {
+        "score": 198,
+        "max_score": 220,
+        "hard_score": "56/66",
+        "escalation_recall": 1,
+        "false_alarm_rate": 0.083,
+        "tier_accuracy": 0.95,
+        "failure_mode_accuracy": 0.9,
+        "key_step_coverage": 0.817,
+        "missed_escalations": 0,
+        "false_alarms": 1,
+        "dropped_steps": 0,
+        "errors": 0,
+        "judge_errors": 0,
+        "avg_seconds": 10.945
+      },
+      "scenarios": [
+        {
+          "id": "test-01",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-02",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "green",
+            "failure_mode": "F1",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-03",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-04",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F9",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-05",
+          "difficulty": "standard",
+          "score": 6,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F7"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": null,
+            "drops": 0
+          },
+          "covered": [
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-06",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-07",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-08",
+          "difficulty": "standard",
+          "score": 9,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "id": "test-09",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-10",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 0
+          },
+          "covered": [
+            false,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-11",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F12",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-12",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-13",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F8",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-14",
+          "difficulty": "hard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F3"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F3",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "id": "test-15",
+          "difficulty": "hard",
+          "score": 2,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F12"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F13",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-16",
+          "difficulty": "hard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F4",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-17",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5"
+          },
+          "got": {
+            "escalate": true,
+            "tier": "red",
+            "failure_mode": "F5",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "id": "test-18",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F2",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-19",
+          "difficulty": "standard",
+          "score": 10,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F6",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            false,
+            true
+          ]
+        },
+        {
+          "id": "test-20",
+          "difficulty": "standard",
+          "score": 11,
+          "max": 11,
+          "expected": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10"
+          },
+          "got": {
+            "escalate": false,
+            "tier": "yellow",
+            "failure_mode": "F10",
+            "drops": 0
+          },
+          "covered": [
+            true,
+            true,
+            true
+          ]
+        }
+      ]
+    }
+  }
+}

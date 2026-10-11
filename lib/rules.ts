@@ -83,7 +83,7 @@ export function checkReadings(readings: Reading[]): Alert[] {
 }
 
 // Logbook categories for spotting repeat problems; first match wins.
-const LOG_CATEGORIES: { name: string; re: RegExp; manual_section: string }[] = [
+export const LOG_CATEGORIES: { name: string; re: RegExp; manual_section: string }[] = [
   { name: "circulation", re: /circ|loop|return temp|boiler/i, manual_section: "8.1" },
   { name: "filter", re: /filter|turbidity|backwash/i, manual_section: "2.5" },
   { name: "chlorine", re: /chlorine|hypochlorite/i, manual_section: "8.1" },
