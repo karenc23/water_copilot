@@ -34,8 +34,15 @@ export async function chat(
   return res.choices[0]?.message?.content ?? "";
 }
 
-/** The model replied, but not with parseable JSON. */
-export class LLMParseError extends Error {}
+/** The model replied, but not with parseable JSON. `raw` is the full reply. */
+export class LLMParseError extends Error {
+  constructor(
+    message: string,
+    readonly raw: string,
+  ) {
+    super(message);
+  }
+}
 
 /**
  * Ask for a JSON object and parse it. Doesn't rely on `response_format`, which
@@ -49,11 +56,11 @@ export async function chatJSON(
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end <= start) {
-    throw new LLMParseError(`LLM did not return JSON: ${text.slice(0, 200)}`);
+    throw new LLMParseError(`LLM did not return JSON: ${text.slice(0, 200)}`, text);
   }
   try {
     return JSON.parse(text.slice(start, end + 1));
   } catch {
-    throw new LLMParseError(`LLM returned invalid JSON: ${text.slice(0, 200)}`);
+    throw new LLMParseError(`LLM returned invalid JSON: ${text.slice(0, 200)}`, text);
   }
 }

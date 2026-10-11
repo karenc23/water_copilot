@@ -1,3 +1,4 @@
+import type OpenAI from "openai";
 import { chatJSON, LLMParseError } from "@/lib/llm";
 import type { LogEntry, Reading } from "@/types";
 
@@ -7,7 +8,7 @@ import type { LogEntry, Reading } from "@/types";
 
 export interface TroubleshootStep {
   action: string;
-  /** Manual section the step comes from, or null if it's general practice. */
+  /** Manual section number the step comes from (e.g. "3.2"); null only if the model gave none. */
   manual_section: string | null;
 }
 
@@ -37,8 +38,8 @@ export const HEALTH_LIMITS = {
 const SYSTEM_PROMPT = `You are a troubleshooting assistant for water treatment plant operators.
 
 Rules you must follow:
-1. Only use chemical doses, feed rates, concentrations, or quantities that appear verbatim in the MANUAL. Never invent or estimate an amount. If the manual doesn't give one, say "see manual / ask supervisor for amount".
-2. Every step that comes from the manual must cite its section (e.g. "4.2 Chlorine Feed"). Use null for general-practice steps such as "re-test the sample".
+1. Only use guidance from the MANUAL. Every step must come from the manual and cite the section number it comes from in "manual_section" (e.g. "3.2"). Do not add steps the manual doesn't support. If the manual doesn't cover the situation, say so in the diagnosis and escalate.
+2. Never invent chemical doses. Only use doses, feed rates, concentrations, or quantities that appear verbatim in the MANUAL. Never estimate an amount. If the manual doesn't give one, say "see manual / ask supervisor for amount".
 3. If there is ANY possible risk to public health (inadequate disinfection, high turbidity, disinfectant overdose, contamination, pH out of range, equipment failure affecting treatment), set "health_risk": true and "escalate": true.
 4. Also escalate if previous log entries show the same problem was not resolved, or if the fix is beyond operator authority.
 5. If you escalate, write "escalation_message": a short message to the shift supervisor stating plant, problem, key readings, and what has been tried. Otherwise null.
@@ -46,7 +47,7 @@ Rules you must follow:
 Respond with ONLY a JSON object, no prose:
 {
   "diagnosis": string,
-  "steps": [{ "action": string, "manual_section": string | null }],
+  "steps": [{ "action": string, "manual_section": string }],
   "health_risk": boolean,
   "escalate": boolean,
   "escalation_message": string | null
@@ -70,21 +71,12 @@ export async function troubleshoot(
       : "MANUAL: (none provided — do not give any amounts, and cite null for every step)",
   ].join("\n\n");
 
-  let raw: unknown;
-  try {
-    raw = await chatJSON([
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userPrompt },
-    ]);
-  } catch (err) {
-    // Unparseable model output: fail safe by escalating. API/config errors propagate.
-    if (!(err instanceof LLMParseError)) throw err;
-    raw = null;
-    warnings.push("Model returned an unreadable response; escalating by default.");
-  }
-
-  const parsed = coerceResult(raw);
+  const parsed = await askWithRetry([
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: userPrompt },
+  ]);
   if (!parsed) {
+    warnings.push("Model returned invalid JSON twice; escalating by default.");
     return {
       diagnosis: "Automated diagnosis unavailable.",
       steps: [],
@@ -103,10 +95,16 @@ export async function troubleshoot(
     return out;
   };
   const diagnosis = redact(parsed.diagnosis);
-  const steps = parsed.steps.map((s) => ({
-    action: redact(s.action),
-    manual_section: manualText.trim() ? s.manual_section : null,
-  }));
+  const sections = manualSections(manualText);
+  const steps = parsed.steps.map((s) => {
+    const section = manualText.trim() ? s.manual_section : null;
+    if (!section) {
+      warnings.push(`Step cites no manual section: "${s.action}"`);
+    } else if (!sections.has(section)) {
+      warnings.push(`Step cites section ${section}, which isn't in the manual: "${s.action}"`);
+    }
+    return { action: redact(s.action), manual_section: section };
+  });
 
   // Rule: always escalate possible health risks.
   let escalate = parsed.escalate || parsed.health_risk;
@@ -124,6 +122,51 @@ export async function troubleshoot(
   }
 
   return { diagnosis, steps, escalate, escalation_message, warnings };
+}
+
+/**
+ * Call the model and validate the reply. If it isn't valid JSON in the expected
+ * shape, show the model its reply and ask once more. Returns null if both fail.
+ * API/config errors propagate.
+ */
+async function askWithRetry(
+  messages: OpenAI.Chat.ChatCompletionMessageParam[],
+): Promise<RawResult | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let reply: string;
+    try {
+      const raw = await chatJSON(messages);
+      const parsed = coerceResult(raw);
+      if (parsed) return parsed;
+      reply = JSON.stringify(raw);
+    } catch (err) {
+      if (!(err instanceof LLMParseError)) throw err;
+      reply = err.raw;
+    }
+    messages = [
+      ...messages,
+      { role: "assistant", content: reply },
+      {
+        role: "user",
+        content:
+          "That was not valid JSON in the required format. Reply again with ONLY the JSON object: diagnosis (string), steps (array of {action, manual_section}), health_risk (boolean), escalate (boolean), escalation_message (string or null).",
+      },
+    ];
+  }
+  return null;
+}
+
+/** Section numbers defined in the manual, e.g. "3.2" from "**3.2 Low residual". */
+function manualSections(manualText: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of manualText.matchAll(/(?:^|\*\*|#\s*)(\d+(?:\.\d+)+)\b/gm)) out.add(m[1]);
+  return out;
+}
+
+/** Normalize "Section 3.2 Low residual" / "§3.2" to "3.2". */
+function sectionNumber(v: unknown): string | null {
+  if (typeof v !== "string" && typeof v !== "number") return null;
+  return String(v).match(/\d+(?:\.\d+)+/)?.[0] ?? null;
 }
 
 function latestReading(readings: Reading[]): Reading | undefined {
@@ -210,10 +253,9 @@ function coerceResult(raw: unknown): RawResult | null {
     if (typeof s === "string") {
       steps.push({ action: s, manual_section: null });
     } else if (s && typeof s === "object" && typeof (s as { action?: unknown }).action === "string") {
-      const sec = (s as { manual_section?: unknown }).manual_section;
       steps.push({
         action: (s as { action: string }).action,
-        manual_section: typeof sec === "string" && sec.trim() ? sec : null,
+        manual_section: sectionNumber((s as { manual_section?: unknown }).manual_section),
       });
     }
   }
