@@ -6,7 +6,7 @@ export default function TroubleshootPage() {
     <>
       <PageHeader
         title="Troubleshoot"
-        subtitle="Get a diagnosis and next steps from the plant manual, checked by fixed safety rules."
+        subtitle="Describe the problem, and watch the agents work it out."
       />
       <TroubleshootViews />
     </>

@@ -28,7 +28,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         title="Plant Status"
-        subtitle={<>Reported by the Sentinel{latest ? ` · latest reading ${formatDate(latest.date)}` : ""}</>}
+        subtitle={<>Today’s readings and alerts, reported by the Sentinel{latest ? ` · latest reading ${formatDate(latest.date)}` : ""}</>}
         agent={<AgentBadge id="sentinel" state="active" />}
       >
         <Link href="/troubleshoot" className={buttonPrimary}>
@@ -63,12 +63,20 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-5">
-        <Card title="Last 30 days" className="lg:col-span-3">
+      <div className="mt-6 grid gap-6 xl:grid-cols-5">
+        <Card
+          title="Last 30 days"
+          className="xl:col-span-3"
+          aside={
+            <Link href="/readings" className="text-base font-semibold text-accent underline underline-offset-4">
+              All readings
+            </Link>
+          }
+        >
           <ReadingsCharts readings={readings.slice(-30)} />
         </Card>
 
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <Card
             title={
               <span className="flex items-center gap-2">
@@ -124,8 +132,8 @@ function ReadingCard({ parameter, value, previous }: { parameter: Parameter; val
   const delta = previous === undefined ? null : Math.round((value - previous) * 100) / 100;
   return (
     <div className={`glass rounded-2xl border-2 p-5 ${s.border}`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-lg font-semibold text-ink">{meta.name}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-lg font-semibold whitespace-nowrap text-ink">{meta.name}</span>
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-bold ${s.solid}`}>
           <TierIcon tier={tier} className="size-4" />
           {s.label.toUpperCase()}

@@ -6,14 +6,15 @@ import Evolution from "@/components/agents/Evolution";
 import { parseEvolution } from "@/components/evolution-data";
 import { Card, PageHeader, Spinner } from "@/components/ui";
 
-const RESULTS_FILE = path.join(process.cwd(), "data", "results.json");
+// RESULTS_FILE (env) points at another optimizer output, e.g. for a demo or a test fixture.
+const RESULTS_FILE = process.env.RESULTS_FILE || path.join(process.cwd(), "data", "results.json");
 
 export default function EvolutionPage() {
   return (
     <>
       <PageHeader
-        title="Evolution"
-        subtitle="How the prompt optimizer improved the Diagnostician: a Critic studies the worst failures, writes new strategies, and the best one survives."
+        title="Agent Evolution"
+        subtitle="The Critic studies failures, Explorers try fixes, the Judge scores them, and the best survives."
       />
       <Suspense
         fallback={

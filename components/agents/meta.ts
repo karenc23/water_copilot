@@ -1,6 +1,6 @@
 // The six agents shown in the Agent Room, the story intro and nowhere else. Each one maps to a
 // real stage of lib/pipeline.ts: rules (Sentinel, Keeper), manual (Librarian), LLM
-// (Diagnostician), safety layer (Governor), escalation packet (Courier).
+// (Diagnostician), safety layer (Governor), drafted escalation message (Courier).
 
 export type AgentId = "sentinel" | "librarian" | "keeper" | "diagnostician" | "governor" | "courier";
 
@@ -59,10 +59,10 @@ export const AGENTS: AgentMeta[] = [
   {
     id: "courier",
     name: "Courier",
-    role: "Carries the packet to the RMW",
-    intro: "When it’s red, I pack the facts for the Remote Maintenance Worker, built from plant data, not AI.",
+    role: "Drafts the message to the expert",
+    intro: "When it’s red, I draft a message for your expert from plant data, not AI. You check it and send it yourself.",
     color: "#fda4af",
-    icon: ["M21.5 2.5 10.5 13.5", "M21.5 2.5l-7 19-4-8-8-4 19-7Z"],
+    icon: ["M5 3h9l5 5v13H5Z", "M14 3v5h5", "M8.5 13h7M8.5 17h4.5"],
   },
 ];
 

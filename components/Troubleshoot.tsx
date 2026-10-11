@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { EscalationPacket, TroubleshootResponse } from "@/lib/pipeline";
-import { AlertList, ManualTag, RuleBadge, TIER_MEANING, TIER_STYLE, TierIcon, readingTier, type Parameter } from "@/components/tier";
+import { useEffect, useRef, useState } from "react";
+import type { TroubleshootResponse } from "@/lib/pipeline";
+import DraftMessage from "@/components/DraftMessage";
+import { AlertList, ManualTag, RuleBadge, TIER_MEANING, TIER_STYLE, TierIcon } from "@/components/tier";
 import SaveToLogbook from "@/components/SaveToLogbook";
-import { Card, Spinner, buttonPrimary, buttonSecondary, formatDate } from "@/components/ui";
+import { Card, Spinner, buttonPrimary, buttonSecondary } from "@/components/ui";
 
 const EXAMPLES = [
   "Water looks cloudy and chlorine reading is lower than yesterday",
@@ -183,7 +184,7 @@ export function ResultView({ result, description }: { result: TroubleshootRespon
   const tier = result.tier;
   const s = TIER_STYLE[tier];
   const meaning = TIER_MEANING[tier];
-  const [packetOpen, setPacketOpen] = useState(false);
+  const [draftOpen, setDraftOpen] = useState(false);
 
   return (
     <>
@@ -193,18 +194,18 @@ export function ResultView({ result, description }: { result: TroubleshootRespon
           <div className="min-w-0 flex-1">
             <p className="text-2xl font-bold">Escalate now: contact your Remote Maintenance Worker</p>
             <p className="mt-1 text-lg text-red-50">
-              Don’t wait to see if it clears. An expert packet with everything they need is ready below.
+              Don’t wait to see if it clears. A message with everything they need has been drafted for you to send.
             </p>
           </div>
           {result.escalation_packet && (
             <button
               type="button"
-              onClick={() => setPacketOpen((o) => !o)}
+              onClick={() => setDraftOpen((o) => !o)}
               className="min-h-12 rounded-lg bg-white px-5 text-lg font-bold text-red-800 hover:bg-red-50"
-              aria-expanded={packetOpen}
-              aria-controls="expert-packet"
+              aria-expanded={draftOpen}
+              aria-controls="draft-message"
             >
-              {packetOpen ? "Hide expert packet" : "View expert packet"}
+              Draft message to expert
             </button>
           )}
         </div>
@@ -280,174 +281,9 @@ export function ResultView({ result, description }: { result: TroubleshootRespon
         </Card>
       )}
 
-      {result.escalation_packet && packetOpen && <ExpertPacket packet={result.escalation_packet} onClose={() => setPacketOpen(false)} />}
+      {result.escalation_packet && draftOpen && <DraftMessage packet={result.escalation_packet} onClose={() => setDraftOpen(false)} />}
 
       <SaveToLogbook key={description} description={description} result={result} />
     </>
-  );
-}
-
-function ExpertPacket({ packet, onClose }: { packet: EscalationPacket; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const ref = useRef<HTMLElement>(null);
-  useEffect(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), []);
-
-  return (
-    <section ref={ref} id="expert-packet" className="glass scroll-mt-6 rounded-2xl border-2 border-red-500/80 shadow-[0_0_40px_-10px_rgba(248,113,113,0.6)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-red-500/15 p-5">
-        <div>
-          <h2 className="text-2xl font-bold text-red-200">Expert packet</h2>
-          <p className="text-base text-ink-soft">
-            For the Remote Maintenance Worker · {packet.plant_id} · built from plant data, not written by AI
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className={buttonSecondary}
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(packet.message);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              } catch {
-                setCopied(false);
-              }
-            }}
-          >
-            {copied ? "Copied" : "Copy as text"}
-          </button>
-          <button type="button" className={buttonSecondary} onClick={onClose}>
-            Close
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-7 p-5 md:p-6">
-        <PacketSection title="Failure mode">
-          {packet.failure_mode ? (
-            <p className="flex flex-wrap items-center gap-2 text-lg text-ink">
-              <span className="font-mono font-semibold">{packet.failure_mode.id}</span> {packet.failure_mode.name}
-              <ManualTag section={packet.failure_mode.manual_section} />
-            </p>
-          ) : (
-            <p className="text-lg text-ink-soft">Not identified</p>
-          )}
-        </PacketSection>
-
-        <PacketSection title="Operator’s words">
-          <blockquote className="border-l-4 border-line-strong bg-glass p-4 text-xl text-ink italic">“{packet.operator_report}”</blockquote>
-        </PacketSection>
-
-        <PacketSection title="Recent readings">
-          {packet.recent_readings.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-md text-left text-lg">
-                <thead>
-                  <tr className="border-b-2 border-line-strong text-sm uppercase tracking-wide text-ink-muted">
-                    <th className="py-2 pr-4 font-semibold">Date</th>
-                    <th className="py-2 pr-4 font-semibold">Chlorine (mg/L)</th>
-                    <th className="py-2 pr-4 font-semibold">Turbidity (NTU)</th>
-                    <th className="py-2 font-semibold">pH</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {packet.recent_readings.map((r) => (
-                    <tr key={r.date} className="border-b border-line">
-                      <td className="py-2 pr-4 text-ink-soft">{formatDate(r.date)}</td>
-                      <ReadingCell parameter="chlorine" value={r.chlorine} />
-                      <ReadingCell parameter="turbidity" value={r.turbidity} />
-                      <ReadingCell parameter="ph" value={r.ph} />
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-lg text-ink-soft">None</p>
-          )}
-        </PacketSection>
-
-        <PacketSection title="Alerts (rule-detected, not AI)">
-          {packet.alerts.length ? (
-            <ul className="list-disc space-y-1 pl-6 text-lg text-ink">
-              {packet.alerts.map((a, i) => {
-                const { text, section } = splitManualRef(a);
-                return (
-                  <li key={i}>
-                    {text} {section && <ManualTag section={section} />}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-lg text-ink-soft">None</p>
-          )}
-        </PacketSection>
-
-        <PacketSection title="Steps already done (from the logbook, last 30 days)">
-          {packet.steps_reported_done.length ? (
-            <ul className="space-y-3">
-              {packet.steps_reported_done.map((l, i) => (
-                <li key={i} className="rounded-lg bg-glass p-4">
-                  <p className="text-base font-semibold text-ink-muted">{formatDate(l.date)}</p>
-                  <ul className="mt-1 list-disc pl-6 text-lg text-ink">
-                    {l.steps.map((st, j) => (
-                      <li key={j}>{st}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-lg text-ink">
-                    <span className="font-semibold">Result:</span> {l.outcome}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-lg text-ink-soft">Nothing logged in the last 30 days.</p>
-          )}
-        </PacketSection>
-
-        <PacketSection title="Recommended steps, not yet done">
-          {packet.steps_recommended.length ? (
-            <ol className="space-y-2">
-              {packet.steps_recommended.map((st, i) => {
-                const { text, section } = splitManualRef(st);
-                return (
-                  <li key={i} className="flex flex-wrap items-baseline gap-2 text-lg text-ink">
-                    <span className="font-bold">{i + 1}.</span>
-                    <span>{text}</span>
-                    {section && <ManualTag section={section} />}
-                  </li>
-                );
-              })}
-            </ol>
-          ) : (
-            <p className="text-lg text-ink-soft">None</p>
-          )}
-        </PacketSection>
-      </div>
-    </section>
-  );
-}
-
-function PacketSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div>
-      <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-faint">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function ReadingCell({ parameter, value }: { parameter: Parameter; value: number }) {
-  const tier = readingTier(parameter, value);
-  const s = TIER_STYLE[tier];
-  return (
-    <td className="py-2 pr-4">
-      <span className={`inline-flex items-center gap-1.5 font-semibold tabular-nums ${tier === "green" ? "text-ink" : s.text}`}>
-        {tier !== "green" && <TierIcon tier={tier} className="size-4" />}
-        {value}
-      </span>
-    </td>
   );
 }

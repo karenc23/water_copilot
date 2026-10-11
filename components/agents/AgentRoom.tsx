@@ -23,7 +23,6 @@ const EXAMPLES = [
 const W = 1000;
 const H = 600;
 const POS = RING_POS;
-const OFFSCREEN = { x: -140, y: 690 };
 
 type Pt = { x: number; y: number };
 
@@ -115,9 +114,9 @@ function Particle({ spec }: { spec: ParticleSpec }) {
       <motion.g style={{ x, y }}>
         <circle r={16} fill={color} opacity={0.22} />
         {glyph === "packet" ? (
-          <g transform="translate(-13 -10)">
-            <rect width={26} height={20} rx={3} fill="#fff1f2" stroke={color} strokeWidth={2} />
-            <path d="M1 2l12 9 12-9" fill="none" stroke={color} strokeWidth={2} />
+          <g transform="translate(-10 -13)">
+            <rect width={20} height={26} rx={3} fill="#fff1f2" stroke={color} strokeWidth={2} />
+            <path d="M5 8h10M5 13h10M5 18h6" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
           </g>
         ) : (
           <circle r={glyph === "drop" ? 6 : 7} fill={color} />
@@ -184,8 +183,8 @@ function particlesFor(e: TraceEvent, key: string): ParticleSpec[] {
       break;
     }
     case "courier":
-      add({ from: P.governor, to: P.courier, bend: 40, label: "Expert packet", color: AGENT.courier.color, glyph: "packet", duration: 1.1 });
-      add({ from: P.courier, to: OFFSCREEN, bend: -60, label: "→ Remote Maintenance Worker", color: AGENT.courier.color, glyph: "packet", delay: 1.1, duration: 1.5 });
+      // The Courier only drafts: the facts travel to it, and the draft stays with the operator.
+      add({ from: P.governor, to: P.courier, bend: 40, label: "Facts for the draft", color: AGENT.courier.color, glyph: "packet", duration: 1.3 });
       break;
   }
   return out;
@@ -336,9 +335,10 @@ function narrate(e: TraceEvent): Bubble | null {
         agent: "courier",
         body: (
           <p>
-            Expert packet for the Remote Maintenance Worker is packed and ready to send: {plural(e.packet.alerts.length, "alert")},{" "}
+            I drafted a message to your expert with {plural(e.packet.alerts.length, "alert")},{" "}
             {plural(e.packet.recent_readings.length, "reading")}, {plural(e.packet.steps_reported_done.length, "logbook entry", "logbook entries")} and{" "}
-            {plural(e.packet.steps_recommended.length, "recommended step")}. Built from plant data, not written by AI.
+            {plural(e.packet.steps_recommended.length, "recommended step")}, built from plant data, not written by AI. Nothing has been sent: open
+            “Draft message to expert” below to edit it and send it yourself.
           </p>
         ),
       };
@@ -521,7 +521,7 @@ export default function AgentRoom() {
   }, [raised, runId]);
   const showBanner = raised && bannerDoneRun !== runId;
 
-  const courierCaption = done && !find("courier") ? "Not needed: tier isn’t red" : null;
+  const courierCaption = find("courier") ? "Draft ready below" : done ? "Not needed: tier isn’t red" : null;
   const bubbles = visible.map((e, i) => ({ i, b: narrate(e) })).filter((x): x is { i: number; b: Bubble } => !!x.b);
 
   const status =
@@ -563,9 +563,9 @@ export default function AgentRoom() {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(description);
               }}
               aria-describedby={hint ? "agent-description-hint" : undefined}
-              rows={2}
+              rows={3}
               placeholder="e.g. Chlorine dropped to 0.4 this morning and the feed pump sounds different"
-              className="min-h-14 flex-1 resize-y rounded-xl border border-white/20 bg-white/5 p-3 text-lg text-white placeholder:text-ink-faint focus:border-teal-300 focus:outline-none"
+              className="min-h-24 flex-1 resize-y rounded-xl border border-white/20 bg-white/5 p-3 text-lg text-white placeholder:text-ink-faint focus:border-teal-300 focus:outline-none"
             />
             <button
               type="submit"
@@ -598,7 +598,7 @@ export default function AgentRoom() {
           </div>
         </form>
 
-        <div className="relative z-10 grid lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="relative z-10 grid xl:grid-cols-[minmax(0,1fr)_19rem]">
           {/* Canvas */}
           <div className="relative">
             <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Six agents in a ring passing information to each other">
@@ -731,8 +731,8 @@ export default function AgentRoom() {
           </div>
 
           {/* Narration feed */}
-          <div className="relative border-t border-white/10 lg:border-t-0 lg:border-l">
-            <div ref={feedRef} className="max-h-96 space-y-3 overflow-y-auto p-4 lg:absolute lg:inset-0 lg:max-h-none" aria-live="polite">
+          <div className="relative border-t border-white/10 xl:border-t-0 xl:border-l">
+            <div ref={feedRef} className="max-h-96 space-y-3 overflow-y-auto p-4 xl:absolute xl:inset-0 xl:max-h-none" aria-live="polite">
               {!bubbles.length && <p className="text-sm text-ink-faint">Each agent will explain what it did here, in plain words.</p>}
               <AnimatePresence initial={false}>
                 {bubbles.map(({ i, b }) => {

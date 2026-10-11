@@ -63,7 +63,8 @@ export default function ResultsChart({
 
   // Round ticks every 25%, with room below the lowest value for its label.
   const values = [...points.map((p) => p.pct), ...refs.map((r) => r.pct)];
-  const lo = Math.min(0, Math.floor((Math.min(...values) - 10) / 25) * 25);
+  const min = Math.min(...values);
+  const lo = min < 0 ? Math.floor((min - 10) / 25) * 25 : 0;
   const ticks = Array.from({ length: (100 - lo) / 25 + 1 }, (_, i) => lo + i * 25);
 
   const plotW = width - M.left - M.right;

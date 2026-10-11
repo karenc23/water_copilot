@@ -6,8 +6,8 @@ export default function HandoffPage() {
   return (
     <>
       <PageHeader
-        title="The Keeper writes the handbook"
-        subtitle="Everything a new operator needs to know about Plant A."
+        title="Handoff Guide"
+        subtitle="The Keeper writes down what a new operator needs to know."
         agent={<AgentBadge id="keeper" />}
       />
       <Handoff />

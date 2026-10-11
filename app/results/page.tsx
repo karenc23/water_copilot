@@ -7,12 +7,13 @@ import { parseResults, type Results, type Score, type Strategy } from "@/compone
 import Link from "next/link";
 import { Card, PageHeader, Spinner, buttonPrimary } from "@/components/ui";
 
-const RESULTS_FILE = path.join(process.cwd(), "data", "results.json");
+// RESULTS_FILE (env) points at another optimizer output, e.g. for a demo or a test fixture.
+const RESULTS_FILE = process.env.RESULTS_FILE || path.join(process.cwd(), "data", "results.json");
 
 export default function ResultsPage() {
   return (
     <>
-      <PageHeader title="Results" subtitle="How the prompt optimizer did against a plain LLM, rules only, and our hand-written expert prompt.">
+      <PageHeader title="Proof" subtitle="How much the agents improved on scenarios they never saw.">
         <Link href="/evolution" className={buttonPrimary}>
           Watch the agents evolve →
         </Link>
@@ -64,7 +65,7 @@ async function ResultsContent() {
 
   return (
     <div className="space-y-6">
-      <Headline baseline={r.test.baseline} evolved={r.test.best} count={r.test.count} />
+      <Headline baseline={r.test.baseline} evolved={r.test.best} single={r.test.single} count={r.test.count} />
       <Summary rewrites={rewrites} ours={r.test.best} expert={r.test.expert} />
 
       <Card
@@ -191,10 +192,12 @@ function pct(s: Score): string {
 function Headline({
   baseline,
   evolved,
+  single,
   count,
 }: {
   baseline: (Score & { label: string }) | null;
   evolved: (Score & { id: string | null }) | null;
+  single: (Score & { id: string | null }) | null;
   count: number | null;
 }) {
   if (!baseline || !evolved) return null;
@@ -250,14 +253,28 @@ function Headline({
         </div>
         {reduction != null && (
           <div className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 sm:ml-auto sm:text-right">
-            <div className="text-4xl font-black text-accent tabular-nums">−{Math.round(reduction)}%</div>
-            <div className="text-sm text-ink-soft">relative error reduction</div>
+            <div className={`text-4xl font-black tabular-nums ${reduction >= 0 ? "text-accent" : "text-amber-200"}`}>
+              {reduction >= 0 ? `−${Math.round(reduction)}%` : `+${Math.round(-reduction)}%`}
+            </div>
+            <div className="text-sm text-ink-soft">{reduction >= 0 ? "relative error reduction" : "more errors than the baseline"}</div>
             <div className="text-xs text-ink-faint tabular-nums">
               points lost: {bErr} → {eErr}
             </div>
           </div>
         )}
       </div>
+      {single && single.max != null && baseline.max != null && bErr ? (
+        <p className="mt-4 text-base text-ink-soft">
+          Single-agent run{single.id ? ` (${single.id})` : ""}: <span className="font-semibold text-ink">{pct(single)}</span> ({single.score} / {single.max}),{" "}
+          {(() => {
+            const r = ((bErr - (single.max - single.score)) / bErr) * 100;
+            return r >= 0 ? `${Math.round(r)}% fewer errors than the baseline.` : `${Math.round(-r)}% more errors than the baseline.`;
+          })()}{" "}
+          <Link href="/evolution" className="font-semibold text-accent underline underline-offset-4">
+            Compare the two runs →
+          </Link>
+        </p>
+      ) : null}
       {rows.length > 0 && (
         <table className="mt-5 w-full max-w-xl text-left text-base tabular-nums">
           <thead className="text-sm text-ink-muted">
@@ -303,7 +320,7 @@ function Summary({ rewrites, ours, expert }: { rewrites: number; ours: Score | n
         : "; the final version did not beat our hand-written expert prompt on unseen scenarios";
   return (
     <p className="text-xl leading-relaxed text-ink">
-      Starting from a generic prompt, a critic agent rewrote the strategy {times}
+      Starting from a generic prompt, the Critic rewrote the strategy {times}
       {outcome}.
     </p>
   );

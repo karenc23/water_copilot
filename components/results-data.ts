@@ -32,8 +32,10 @@ export interface Results {
   baselines: { plain: Score | null; rules: Score | null; expert: (Score & { id: string | null }) | null };
   rounds: Round[];
   test: {
-    /** What "Baseline" means in the headline: test.baseline if the optimizer records one, else the plain LLM. */
+    /** What "Baseline" means in the headline: test.baseline, else the round-0 generic prompt, else the plain LLM. */
     baseline: (Score & { label: string }) | null;
+    /** The single-agent run's best strategy, when the optimizer ran one. */
+    single: (Score & { id: string | null }) | null;
     plain: Score | null;
     rules: Score | null;
     expert: (Score & { id: string | null }) | null;
@@ -136,9 +138,13 @@ export function parseResults(raw: unknown): Results {
   const testBestScore = scoreOf(test.best, testMax);
 
   const explicitBaseline = scoreOf(test.baseline, testMax);
+  const r0 = scoreOf(test.r0_generic, testMax);
+  const single = scoreOf(test.single_agent_best, testMax);
   const baseline = explicitBaseline
     ? { ...explicitBaseline, label: str(obj(test.baseline)?.label) ?? str(obj(test.baseline)?.id) ?? "Baseline" }
-    : testPlain
+    : r0
+      ? { ...r0, label: "Generic prompt (round 0)" }
+      : testPlain
       ? { ...testPlain, label: "Plain LLM" }
       : null;
 
@@ -149,6 +155,7 @@ export function parseResults(raw: unknown): Results {
     rounds,
     test: {
       baseline,
+      single: single ? { ...single, id: str(obj(test.single_agent_best)?.id) } : null,
       plain: testPlain,
       rules: testRules,
       expert: testExpertScore ? { ...testExpertScore, id: str(obj(test.expert_reference)?.id) } : null,

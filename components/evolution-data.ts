@@ -25,8 +25,14 @@ export interface EvoStrategy {
   parentId: string | null;
   /** The critic's hypothesis for this child, if the optimizer recorded one. */
   hypothesis: string | null;
-  /** "What I changed and why": the optimizer's changes field, else its rationale. */
+  /** "What I changed and why": the optimizer's change field, else its rationale. */
   changes: string | null;
+  /** Parallel lane that produced it (e.g. "thresholds"), if recorded. */
+  lane: string | null;
+  /** Training scenarios this child was written to fix. */
+  targets: string[];
+  /** The optimizer's own check of this child against its targets. */
+  feedback: { targets: number; nowPass: number; hitRate: number; regressions: number | null } | null;
   score: number;
   max: number | null;
   prompt: string | null;
@@ -56,7 +62,7 @@ export interface EvoRound {
 }
 
 export interface TestRow {
-  key: "plain" | "rules" | "expert" | "evolved";
+  key: "baseline" | "plain" | "rules" | "expert" | "evolved" | "single";
   label: string;
   sub: string | null;
   score: number;
@@ -76,6 +82,8 @@ export interface RunPoint {
 export interface AgentRun {
   label: string;
   points: RunPoint[];
+  candidates: number | null;
+  trainScore: number | null;
   test: { score: number; max: number | null } | null;
   wallSeconds: number | null;
 }
@@ -83,8 +91,9 @@ export interface AgentRun {
 export interface ParallelComparison {
   a: AgentRun;
   b: AgentRun;
-  /** B's wall-clock ÷ A's, the optimizer's figure if recorded. */
+  /** Measured concurrency speedup (sequential ÷ concurrent time), with what it was measured on. */
   speedup: number | null;
+  speedupBasis: string | null;
 }
 
 export interface Evolution {
@@ -118,7 +127,7 @@ function textOf(v: unknown): string | null {
 function runOf(v: unknown, fallbackLabel: string): AgentRun | null {
   const o = obj(v);
   if (!o) return null;
-  const points = arr(o.curve ?? o.history ?? o.progress ?? o.points).flatMap((p) => {
+  const points = arr(o.trace ?? o.curve ?? o.history ?? o.progress ?? o.points).flatMap((p) => {
     const po = obj(p);
     const candidates = num(po?.candidates) ?? num(po?.evaluated) ?? num(po?.candidates_evaluated) ?? num(po?.n);
     const best = num(po?.best) ?? num(po?.best_score) ?? num(po?.score);
@@ -132,6 +141,8 @@ function runOf(v: unknown, fallbackLabel: string): AgentRun | null {
   return {
     label: str(o.label) ?? str(o.name) ?? fallbackLabel,
     points,
+    candidates: num(o.candidates) ?? points.at(-1)?.candidates ?? null,
+    trainScore: num(o.train_score),
     test: testScore !== null ? { score: testScore, max: num(obj(t)?.max) ?? num(obj(t)?.max_score) ?? num(o.test_max) } : null,
     wallSeconds: num(o.wall_seconds) ?? num(o.wall_clock_seconds) ?? num(o.seconds) ?? points.at(-1)?.seconds ?? null,
   };
@@ -139,14 +150,21 @@ function runOf(v: unknown, fallbackLabel: string): AgentRun | null {
 
 /** results.json may record a parallel (A) vs single-agent (B) run under one of a few names. */
 function parallelOf(root: Obj): ParallelComparison | null {
-  const c = obj(root.parallel_vs_single) ?? obj(root.parallel_comparison) ?? obj(root.agent_comparison) ?? obj(root.comparison);
+  const c =
+    obj(obj(root.rubric)?.parallelism) ?? obj(root.parallelism) ?? obj(root.parallel_vs_single) ?? obj(root.parallel_comparison) ?? obj(root.comparison);
   if (!c) return null;
   const runs = arr(c.runs);
-  const a = runOf(c.parallel ?? c.A ?? c.a ?? runs[0], "A · parallel agents");
+  const a = runOf(c.parallel ?? c.A ?? c.a ?? runs[0], "A · parallel lanes");
   const b = runOf(c.single ?? c.B ?? c.b ?? runs[1], "B · single agent");
   if (!a || !b) return null;
-  const recorded = num(c.speedup) ?? num(c.concurrency_speedup);
-  return { a, b, speedup: recorded ?? (a.wallSeconds && b.wallSeconds ? b.wallSeconds / a.wallSeconds : null) };
+  const cs = obj(c.concurrency_speedup);
+  const measured = num(cs?.speedup) ?? num(c.concurrency_speedup) ?? num(c.speedup);
+  const n = arr(cs?.scenarios).length;
+  const basis =
+    cs && num(cs.sequential_s) !== null && num(cs.concurrent_s) !== null
+      ? `${n || "the same"} scenarios: ${num(cs.sequential_s)!.toFixed(1)} s one at a time vs ${num(cs.concurrent_s)!.toFixed(1)} s with ${num(cs.concurrency) ?? "several"} at once`
+      : null;
+  return { a, b, speedup: measured, speedupBasis: basis };
 }
 
 function outcome(v: unknown): Outcome {
@@ -195,7 +213,14 @@ export function parseEvolution(raw: unknown): Evolution {
       }
       const scenarioScores: EvoStrategy["scenarioScores"] = {};
       for (const sc of scenarios(so.scenarios)) scenarioScores[sc.id] = { score: sc.score, max: sc.max };
-      const changes = textOf(so.changes ?? so.what_changed ?? so.change_summary ?? so.changes_and_why);
+      const changes = textOf(so.change ?? so.changes ?? so.what_changed ?? so.change_summary);
+      const fb = obj(so.feedback);
+      const fbTargets = num(fb?.targets);
+      const fbPass = num(fb?.now_pass);
+      const feedback =
+        fb && fbTargets !== null && fbPass !== null
+          ? { targets: fbTargets, nowPass: fbPass, hitRate: num(fb.hit_rate) ?? (fbTargets ? fbPass / fbTargets : 0), regressions: num(fb.regressions) }
+          : null;
       return [
         {
           id,
@@ -203,6 +228,9 @@ export function parseEvolution(raw: unknown): Evolution {
           parentId: str(so.parent_id) ?? str(so.parent),
           hypothesis: textOf(so.hypothesis),
           changes: changes ?? str(so.rationale),
+          lane: str(so.lane),
+          targets: arr(so.targets).flatMap((t) => (str(t) ? [str(t)!] : [])),
+          feedback,
           score,
           max,
           prompt: str(so.prompt),
@@ -213,11 +241,18 @@ export function parseEvolution(raw: unknown): Evolution {
         },
       ];
     });
-    const recordedHit = num(ro.feedback_hit_rate) ?? num(obj(ro.feedback)?.hit_rate);
-    const targetedIds = arr(ro.targeted ?? ro.targeted_scenarios ?? obj(ro.feedback)?.targeted).flatMap((t) => {
+    // Round hit rate: recorded on the round, else pooled from the children's own feedback.
+    const withFb = strategies.filter((x) => x.feedback && x.feedback.targets > 0);
+    const pooled =
+      withFb.length && withFb.length === strategies.length
+        ? withFb.reduce((a, x) => a + x.feedback!.nowPass, 0) / withFb.reduce((a, x) => a + x.feedback!.targets, 0)
+        : null;
+    const recordedHit = num(ro.feedback_hit_rate) ?? num(obj(ro.feedback)?.hit_rate) ?? pooled;
+    const roundTargets = arr(ro.targeted ?? ro.targeted_scenarios ?? obj(ro.feedback)?.targeted).flatMap((t) => {
       const id = str(t) ?? str(obj(t)?.id);
       return id ? [id] : [];
     });
+    const targetedIds = roundTargets.length ? roundTargets : [...new Set(strategies.flatMap((x) => x.targets))];
     return [
       {
         round,
@@ -271,11 +306,14 @@ export function parseEvolution(raw: unknown): Evolution {
     .find((e) => e && str(e.id) === testExpertId);
   const expertScore = num(expertEntry?.score);
 
+  const hasSingle = !!obj(test.single_agent_best);
   const rowDefs: [TestRow["key"], string, string][] = [
+    ["baseline", "Generic prompt (round 0)", "r0_generic"],
     ["plain", "Plain LLM", "plain_llm"],
     ["rules", "Rules only", "rules_only"],
     ["expert", "Expert prompt", "expert_reference"],
-    ["evolved", "Evolved", "best"],
+    ["evolved", hasSingle ? "Evolved · A parallel" : "Evolved", "best"],
+    ["single", "Evolved · B single agent", "single_agent_best"],
   ];
   let testCount: number | null = null;
   const rows: TestRow[] = rowDefs.flatMap(([key, label, field]) => {

@@ -9,8 +9,8 @@ export default function LogbookPage() {
   return (
     <>
       <PageHeader
-        title="Keeper’s Memory"
-        subtitle="Every problem an operator logged, the steps they took, and how it turned out."
+        title="Plant Memory"
+        subtitle="Every problem and fix, kept by the Keeper."
         agent={<AgentBadge id="keeper" state="active" />}
       />
       <Suspense

@@ -347,9 +347,11 @@ function captionFor(s: Step, data: EvolutionData, byId: Map<string, EvoStrategy>
         ? `It pulls in ${parent?.id ?? "its"}’s ${rd.worst.length} worst-scored scenarios: what was expected vs. what it got.`
         : "No failed scenarios to learn from.";
     case "spawn":
-      return `It writes ${rd.strategies.length} new strategies, each a different fix.`;
+      return rd.strategies.some((x) => x.lane)
+        ? `It sends out ${rd.strategies.length} Explorers in parallel, one per hypothesis lane, each a new strategy.`
+        : `It sends out ${rd.strategies.length} Explorers, each a new strategy with a different fix.`;
     case "scores":
-      return `Each child is scored on the same training scenarios.`;
+      return `The Judge scores each Explorer on the same training scenarios.`;
     case "select": {
       const best = rd.bestId ? byId.get(rd.bestId) : undefined;
       if (!best) return "No strategy qualified this round.";
@@ -486,9 +488,9 @@ function ScoreLine({
   hover: number | null;
   setHover: (g: number | null) => void;
 }) {
-  const h = 190;
+  const h = 206;
   const top = 26;
-  const bottom = h - 34;
+  const bottom = h - 50;
   const values = [...points.map((p) => p.score), ...(expert ? [expert.score] : [])];
   if (!values.length) return null;
   const hi = trainMax ?? Math.max(...values) + 10;
@@ -539,15 +541,19 @@ function ScoreLine({
             </g>
           ))}
           {points.map((p) => (
-            <text key={`x${p.g}`} x={p.x} y={h - 10} textAnchor="middle" fontSize={12} fill="#aab7c9">
+            <text key={`x${p.g}`} x={p.x} y={h - 26} textAnchor="middle" fontSize={12} fill="#aab7c9">
               Round {p.g}
-              {p.hit != null && p.shown ? ` · feedback hit ${Math.round(p.hit * 100)}%` : ""}
+              {p.hit != null && p.shown && (
+                <tspan x={p.x} dy={14} fill="#5eead4">
+                  feedback hit {Math.round(p.hit * 100)}%
+                </tspan>
+              )}
             </text>
           ))}
         </svg>
         {hp && (
           <div
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg bg-glass px-3 py-1.5 text-sm text-ink shadow-lg"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-lg border border-line-strong bg-night-raised/95 px-3 py-1.5 text-sm text-ink shadow-xl"
             style={{ left: `${(hp.x / W) * 100}%`, top: `${(y(hp.score) / h) * 100 - 6}%` }}
           >
             <div className="font-semibold">Round {hp.g}</div>
@@ -566,7 +572,7 @@ function TestComparison({ rows, count }: { rows: TestRow[]; count: number | null
   const dangerous = rows[0]?.dangerous ?? 0;
   const safe = rows[0]?.safe ?? 0;
   return (
-    <div className="rounded-2xl border border-line bg-glass p-5 md:p-6">
+    <div className="glass rounded-2xl p-5 md:p-6">
       <h2 className="text-2xl font-bold text-ink">On scenarios it never saw</h2>
       <p className="mt-1 text-base text-ink-muted">
         {count ?? "The"} held-out test scenarios: {dangerous} truly dangerous (should escalate), {safe} not. Lower is better on both.
@@ -587,9 +593,9 @@ function TestComparison({ rows, count }: { rows: TestRow[]; count: number | null
           label={(r) => `${r.falseAlarms} of ${r.safe}`}
         />
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {rows.map((r) => (
-          <div key={r.key} className={`rounded-xl p-3 ${r.key === "evolved" ? "bg-teal-50 ring-2 ring-teal-600" : "bg-glass"}`}>
+          <div key={r.key} className={`rounded-xl p-3 ${r.key === "evolved" || r.key === "single" ? "glow-accent border bg-accent/10" : "border border-line bg-glass"}`}>
             <div className="text-sm font-semibold text-ink-muted">{r.label}</div>
             <div className="text-2xl font-black text-ink tabular-nums">
               {r.score}
@@ -623,13 +629,13 @@ function RateChart({
       <ul className="mt-3 space-y-2.5">
         {rows.map((r, i) => {
           const v = value(r);
-          const ours = r.key === "evolved";
+          const ours = r.key === "evolved" || r.key === "single";
           return (
-            <li key={r.key} className="grid grid-cols-[7.5rem_1fr_4.5rem] items-center gap-3" title={`${r.label}: ${label(r)} (${Math.round(v * 100)}%)`}>
+            <li key={r.key} className="grid grid-cols-[minmax(7rem,11rem)_1fr_5.5rem] items-center gap-3" title={`${r.label}: ${label(r)} (${Math.round(v * 100)}%)`}>
               <span className={`text-sm ${ours ? "font-bold text-ink" : "text-ink-soft"}`}>{r.label}</span>
               <span className="h-5 rounded bg-glass-strong">
                 <motion.span
-                  className={`block h-full rounded ${ours ? "bg-teal-600" : "bg-slate-400"}`}
+                  className={`block h-full rounded ${ours ? "bg-accent shadow-[0_0_10px_rgba(94,234,212,0.8)]" : "bg-ink-faint"}`}
                   initial={{ width: 0 }}
                   animate={{ width: v ? `${v * 100}%` : "3px" }}
                   transition={{ duration: 0.8, delay: 0.2 + i * 0.12 }}
@@ -659,7 +665,7 @@ function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number |
       {s && (
         <motion.div
           key="panel"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-4 md:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-night/75 p-4 backdrop-blur-sm md:items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -669,7 +675,7 @@ function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number |
             role="dialog"
             aria-modal="true"
             aria-labelledby="prompt-title"
-            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-glass p-6 shadow-2xl"
+            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line-strong bg-night-raised p-6 shadow-2xl"
             initial={{ y: 40, scale: 0.97 }}
             animate={{ y: 0, scale: 1 }}
             exit={{ y: 40, opacity: 0 }}
@@ -713,7 +719,7 @@ function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number |
               </p>
             )}
             <h3 className="mt-5 text-sm font-semibold uppercase tracking-wide text-ink-faint">Full prompt</h3>
-            <pre className="mt-1 rounded-lg bg-glass p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-ink">{s.prompt ?? "(not recorded)"}</pre>
+            <pre className="mt-1 rounded-lg border border-line bg-night p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-ink">{s.prompt ?? "(not recorded)"}</pre>
           </motion.div>
         </motion.div>
       )}
@@ -725,20 +731,23 @@ function PromptPanel({ s, max, onClose }: { s: EvoStrategy | null; max: number |
 function RoundDetails({ round, reveal, onOpen }: { round: EvoRound | null; reveal: number; onOpen: (s: EvoStrategy) => void }) {
   if (!round || round.round === 0 || reveal === 0) return null;
   const fixed = round.fixes.filter((f) => f.status === "fixed" || f.status === "improved").length;
+  const fbTargets = round.strategies.reduce((a, s) => a + (s.feedback?.targets ?? 0), 0);
+  const fbPass = round.strategies.reduce((a, s) => a + (s.feedback?.nowPass ?? 0), 0);
   return (
     <div className="relative z-10 border-t border-white/10 px-4 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-base font-bold text-white">Round {round.round}: the Critic’s children</h3>
+        <h3 className="text-base font-bold text-white">Round {round.round}: the Explorers</h3>
         {reveal >= 3 && round.hitRate !== null && (
           <p className="text-sm text-ink-soft">
             Feedback hit rate{" "}
             <span className="font-bold text-accent tabular-nums">{Math.round(round.hitRate * 100)}%</span>
-            {round.hitRateSource === "computed" && round.fixes.length > 0 && (
-              <span className="text-ink-faint">
-                {" "}
-                · {fixed} of {round.fixes.length} targeted scenarios fixed or improved in the survivor
-              </span>
-            )}
+            <span className="text-ink-faint">
+              {fbTargets > 0
+                ? ` · ${fbPass} of ${fbTargets} targeted scenarios now pass across the children (optimizer’s check)`
+                : round.fixes.length > 0
+                  ? ` · ${fixed} of ${round.fixes.length} targeted scenarios fixed or improved in the survivor`
+                  : ""}
+            </span>
           </p>
         )}
       </div>
@@ -765,8 +774,21 @@ function RoundDetails({ round, reveal, onOpen }: { round: EvoRound | null; revea
                   </span>
                 )}
               </div>
+              {(s.lane || s.targets.length > 0) && (
+                <p className="mt-1 text-xs text-ink-faint">
+                  {s.lane && <>lane: <span className="font-semibold text-ink-soft">{s.lane.replace(/_/g, " ")}</span></>}
+                  {s.lane && s.targets.length > 0 && " · "}
+                  {s.targets.length > 0 && <>targets {s.targets.join(", ")}</>}
+                </p>
+              )}
+              {reveal >= 2 && s.feedback && (
+                <p className="mt-1 text-xs font-semibold text-accent">
+                  {s.feedback.nowPass} of {s.feedback.targets} targets now pass
+                  {s.feedback.regressions ? <span className="font-normal text-amber-200"> · {s.feedback.regressions} regressions elsewhere</span> : null}
+                </p>
+              )}
               {s.hypothesis && (
-                <p className="mt-2 text-sm text-ink-soft">
+                <p className="mt-2 line-clamp-3 text-sm text-ink-soft">
                   <span className="font-semibold text-aurora-violet">Hypothesis: </span>
                   {s.hypothesis}
                 </p>
@@ -813,6 +835,12 @@ function ParallelPanel({ c }: { c: ParallelComparison }) {
         {(["a", "b"] as const).map((k) => (
           <div key={k} className="rounded-xl border border-line bg-glass-strong p-3">
             <div className="text-sm font-semibold text-ink-muted">{c[k].label} · test score</div>
+            {c[k].candidates != null && (
+              <div className="text-xs text-ink-faint">
+                {c[k].candidates} candidates{c[k].wallSeconds != null ? ` · ${Math.round(c[k].wallSeconds! / 60)} min` : ""}
+                {c[k].trainScore != null ? ` · train ${c[k].trainScore}` : ""}
+              </div>
+            )}
             <div className="text-2xl font-black text-ink tabular-nums">
               {c[k].test ? (
                 <>
@@ -828,6 +856,7 @@ function ParallelPanel({ c }: { c: ParallelComparison }) {
         <div className="glow-accent rounded-xl border bg-accent/10 p-3">
           <div className="text-sm font-semibold text-accent">Concurrency speedup</div>
           <div className="text-2xl font-black text-ink tabular-nums">{c.speedup != null ? `${c.speedup.toFixed(1)}×` : "—"}</div>
+          {c.speedupBasis && <div className="text-xs text-ink-muted">{c.speedupBasis}</div>}
         </div>
       </div>
     </section>
@@ -893,9 +922,8 @@ function RunChart({
                   strokeWidth={2}
                   style={{ filter: `drop-shadow(0 0 5px ${RUN_COLORS[k]})` }}
                   initial={{ pathLength: 0 }}
-                  whileInView={{ pathLength: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.4 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.4, delay: 0.3 }}
                 />
                 {pts.map((p, i) => (
                   <circle
