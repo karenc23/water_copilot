@@ -16,11 +16,11 @@
 | Layout | / story | laptop | ✅ |  |
 | Story | Enter → /troubleshoot | laptop | ✅ |  |
 | Story | Skip intro → /troubleshoot | laptop | ✅ |  |
-| Click /troubleshoot | tab “Operator view” | laptop | ✅ |  |
-| Click /troubleshoot | tab “See the agents think” | laptop | ✅ | already the active tab (tested via switching in flows) |
 | Click /troubleshoot | button “Wake the agents” | laptop | ✅ |  |
 | Click /troubleshoot | button “Water looks cloudy and chlorine reading is lower than yester” | laptop | ✅ |  |
 | Click /troubleshoot | button “Second backwash today and the filter still won’t clear” | laptop | ✅ |  |
+| Click /troubleshoot | radio “Evolved (b3)” | laptop | ✅ | already selected (switching is tested in the flows) |
+| Click /troubleshoot | radio “Fast” | laptop | ✅ |  |
 | Click /dashboard | link “Ask the agents →” | laptop | ✅ | → /troubleshoot |
 | Click /dashboard | link “Ask the agents what to do →” | laptop | ✅ | → /troubleshoot |
 | Click /dashboard | link “All readings” | laptop | ✅ | → /readings |
@@ -38,39 +38,58 @@
 | Click /evolution | button “Pause” | laptop | ✅ |  |
 | Click /evolution | button “Restart” | laptop | ✅ |  |
 | Click /evolution | button “Jump to the end” | laptop | ✅ |  |
-| Troubleshoot · Agent view | example 1: stream finishes, answer card slides in | laptop | ✅ |  |
-| Troubleshoot · Agent view | example 1: narration feed filled | laptop | ✅ | 12 bubbles |
-| Layout | /troubleshoot agents ex1 | laptop | ✅ |  |
-| Troubleshoot · Agent view | example 2: stream finishes, answer card slides in | laptop | ✅ |  |
-| Troubleshoot · Agent view | example 2: narration feed filled | laptop | ✅ | 12 bubbles |
-| Troubleshoot · Agent view | Replay re-runs the trace | laptop | ✅ |  |
-| Troubleshoot · Agent view | Courier drafts (no “sent” claim, no fly-off) | laptop | ✅ |  |
-| Troubleshoot · Agent view | “Draft message to expert” opens an editable draft | laptop | ✅ |  |
-| Troubleshoot · Agent view | Copy (includes edits) | laptop | ✅ |  |
-| Troubleshoot · Agent view | Download .txt | laptop | ✅ | escalation-plant-a-2026-10-11.txt |
-| Troubleshoot · Agent view | Open in email (mailto with subject + body) | laptop | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
-| Layout | /troubleshoot agents ex2 | laptop | ✅ |  |
-| Troubleshoot · Operator view | example 1: diagnosis returned | laptop | ✅ |  |
-| Layout | /troubleshoot operator ex1 | laptop | ✅ |  |
-| Troubleshoot · Operator view | example 2: diagnosis returned | laptop | ✅ |  |
-| Troubleshoot · Operator view | “Draft message to expert” opens an editable draft | laptop | ✅ |  |
-| Troubleshoot · Operator view | Copy (includes edits) | laptop | ✅ |  |
-| Troubleshoot · Operator view | Download .txt | laptop | ✅ | escalation-plant-a-2026-10-11.txt |
-| Troubleshoot · Operator view | Open in email (mailto with subject + body) | laptop | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
-| Layout | /troubleshoot operator ex2 | laptop | ✅ |  |
-| Errors | Agent view: empty submit shows a friendly hint | laptop | ✅ |  |
-| Errors | Operator view: empty submit shows a friendly hint | laptop | ✅ |  |
-| Errors | Agent view: API error → friendly message | laptop | ✅ |  |
-| Errors | Operator view: API error → friendly message | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | strategy toggle selected | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: “Running evolved strategy: b3” shown | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | laptop | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Evolved (b3) | example 1: finished (18 s incl. animation) | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: no fallback needed | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: narration feed filled | laptop | ✅ | 6 bubbles |
+| Layout | /troubleshoot evolved ex1 | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | strategy toggle selected | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: “Running evolved strategy: b3” shown | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | laptop | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Evolved (b3) | example 2: finished (24 s incl. animation) | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: no fallback needed | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: narration feed filled | laptop | ✅ | 7 bubbles |
+| Troubleshoot · Evolved (b3) | Replay re-runs the trace and refills the answer | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | Courier drafts (no “sent” claim) | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | “Draft message to expert” opens an editable draft | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | Copy (includes edits) | laptop | ✅ |  |
+| Troubleshoot · Evolved (b3) | Download .txt | laptop | ✅ | escalation-plant-a-2026-10-11.txt |
+| Troubleshoot · Evolved (b3) | Open in email (mailto with subject + body) | laptop | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
+| Layout | /troubleshoot evolved ex2 | laptop | ✅ |  |
+| Troubleshoot · Fast | strategy toggle selected | laptop | ✅ |  |
+| Troubleshoot · Fast | example 1: “Running Fast strategy” shown | laptop | ✅ |  |
+| Troubleshoot · Fast | example 1: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | laptop | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Fast | example 1: finished (13 s incl. animation) | laptop | ✅ |  |
+| Troubleshoot · Fast | example 1: narration feed filled | laptop | ✅ | 7 bubbles |
+| Layout | /troubleshoot fast ex1 | laptop | ✅ |  |
+| Troubleshoot · Fast | strategy toggle selected | laptop | ✅ |  |
+| Troubleshoot · Fast | example 2: “Running Fast strategy” shown | laptop | ✅ |  |
+| Troubleshoot · Fast | example 2: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | laptop | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Fast | example 2: finished (13 s incl. animation) | laptop | ✅ |  |
+| Troubleshoot · Fast | example 2: narration feed filled | laptop | ✅ | 7 bubbles |
+| Troubleshoot · Fast | Replay re-runs the trace and refills the answer | laptop | ✅ |  |
+| Troubleshoot · Fast | Courier drafts (no “sent” claim) | laptop | ✅ |  |
+| Troubleshoot · Fast | “Draft message to expert” opens an editable draft | laptop | ✅ |  |
+| Troubleshoot · Fast | Copy (includes edits) | laptop | ✅ |  |
+| Troubleshoot · Fast | Download .txt | laptop | ✅ | escalation-plant-a-2026-10-11.txt |
+| Troubleshoot · Fast | Open in email (mailto with subject + body) | laptop | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
+| Layout | /troubleshoot fast ex2 | laptop | ✅ |  |
+| Troubleshoot · Governor override (fixture) | red pulse + “Governor overruled” + “Raised to RED by Governor” in the answer | laptop | ✅ |  |
+| Errors | empty submit shows a friendly hint | laptop | ✅ |  |
+| Errors | evolved error → automatic fallback to Fast, answer still arrives | laptop | ✅ |  |
+| Errors | API error (evolved and fast) → friendly message | laptop | ✅ |  |
 | Errors | Handoff: API error → friendly message | laptop | ✅ |  |
 | Errors | Save to logbook: missing fields → friendly message | laptop | ✅ |  |
 | Errors | Save to logbook: database error → friendly message | laptop | ✅ |  |
+| Errors | evolved times out at 30 s → falls back to Fast | laptop | ✅ | fallback after 31 s |
 | Save to logbook | “Start from the recommended steps” fills the steps | laptop | ✅ |  |
 | Save to logbook | entry saved (POST /api/logs → MongoDB) | laptop | ✅ |  |
 | Save to logbook | entry appears in the Logbook | laptop | ✅ |  |
 | Save to logbook | Keeper recalls the saved incident on the next question | laptop | ✅ |  |
-| Logbook | search “filter 2” narrows the list | laptop | ✅ | 5 of 9 entries |
-| Logbook | “Escalated only” shows only escalated entries | laptop | ✅ | 2 of 9 entries (2/2 badged) |
+| Logbook | search “filter 2” narrows the list | laptop | ✅ | 5 of 10 entries |
+| Logbook | “Escalated only” shows only escalated entries | laptop | ✅ | 3 of 10 entries (3/3 badged) |
 | Logbook | no-match search shows an empty state | laptop | ✅ |  |
 | Handoff | handbook generated | laptop | ✅ |  |
 | Save to logbook | saved entry appears in a newly generated handbook | laptop | ✅ | cites 2026-10-11 |
@@ -108,16 +127,16 @@
 | Story | scene holds ≥ 8 s (reading speed + 5 s hold) | ipad | ✅ |  |
 | Story | → arrow advances to scene 2 | ipad | ✅ |  |
 | Story | space advances to the team | ipad | ✅ |  |
-| Story | agent intros ≈ 1.5 s each | ipad | ✅ | 1499 ms |
+| Story | agent intros ≈ 1.5 s each | ipad | ✅ | 1498 ms |
 | Story | click advances | ipad | ✅ | Keeper → Diagnostician |
 | Layout | / story | ipad | ✅ |  |
 | Story | Enter → /troubleshoot | ipad | ✅ |  |
 | Story | Skip intro → /troubleshoot | ipad | ✅ |  |
-| Click /troubleshoot | tab “Operator view” | ipad | ✅ |  |
-| Click /troubleshoot | tab “See the agents think” | ipad | ✅ | already the active tab (tested via switching in flows) |
 | Click /troubleshoot | button “Wake the agents” | ipad | ✅ |  |
 | Click /troubleshoot | button “Water looks cloudy and chlorine reading is lower than yester” | ipad | ✅ |  |
 | Click /troubleshoot | button “Second backwash today and the filter still won’t clear” | ipad | ✅ |  |
+| Click /troubleshoot | radio “Evolved (b3)” | ipad | ✅ | already selected (switching is tested in the flows) |
+| Click /troubleshoot | radio “Fast” | ipad | ✅ |  |
 | Click /dashboard | link “Ask the agents →” | ipad | ✅ | → /troubleshoot |
 | Click /dashboard | link “Ask the agents what to do →” | ipad | ✅ | → /troubleshoot |
 | Click /dashboard | link “All readings” | ipad | ✅ | → /readings |
@@ -135,30 +154,48 @@
 | Click /evolution | button “Pause” | ipad | ✅ |  |
 | Click /evolution | button “Restart” | ipad | ✅ |  |
 | Click /evolution | button “Jump to the end” | ipad | ✅ |  |
-| Troubleshoot · Agent view | example 1: stream finishes, answer card slides in | ipad | ✅ |  |
-| Troubleshoot · Agent view | example 1: narration feed filled | ipad | ✅ | 12 bubbles |
-| Layout | /troubleshoot agents ex1 | ipad | ✅ |  |
-| Troubleshoot · Agent view | example 2: stream finishes, answer card slides in | ipad | ✅ |  |
-| Troubleshoot · Agent view | example 2: narration feed filled | ipad | ✅ | 12 bubbles |
-| Troubleshoot · Agent view | Replay re-runs the trace | ipad | ✅ |  |
-| Troubleshoot · Agent view | Courier drafts (no “sent” claim, no fly-off) | ipad | ✅ |  |
-| Troubleshoot · Agent view | “Draft message to expert” opens an editable draft | ipad | ✅ |  |
-| Troubleshoot · Agent view | Copy (includes edits) | ipad | ✅ |  |
-| Troubleshoot · Agent view | Download .txt | ipad | ✅ | escalation-plant-a-2026-10-11.txt |
-| Troubleshoot · Agent view | Open in email (mailto with subject + body) | ipad | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
-| Layout | /troubleshoot agents ex2 | ipad | ✅ |  |
-| Troubleshoot · Operator view | example 1: diagnosis returned | ipad | ✅ |  |
-| Layout | /troubleshoot operator ex1 | ipad | ✅ |  |
-| Troubleshoot · Operator view | example 2: diagnosis returned | ipad | ✅ |  |
-| Troubleshoot · Operator view | “Draft message to expert” opens an editable draft | ipad | ✅ |  |
-| Troubleshoot · Operator view | Copy (includes edits) | ipad | ✅ |  |
-| Troubleshoot · Operator view | Download .txt | ipad | ✅ | escalation-plant-a-2026-10-11.txt |
-| Troubleshoot · Operator view | Open in email (mailto with subject + body) | ipad | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
-| Layout | /troubleshoot operator ex2 | ipad | ✅ |  |
-| Errors | Agent view: empty submit shows a friendly hint | ipad | ✅ |  |
-| Errors | Operator view: empty submit shows a friendly hint | ipad | ✅ |  |
-| Errors | Agent view: API error → friendly message | ipad | ✅ |  |
-| Errors | Operator view: API error → friendly message | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | strategy toggle selected | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: “Running evolved strategy: b3” shown | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | ipad | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Evolved (b3) | example 1: finished (21 s incl. animation) | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: no fallback needed | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 1: narration feed filled | ipad | ✅ | 6 bubbles |
+| Layout | /troubleshoot evolved ex1 | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | strategy toggle selected | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: “Running evolved strategy: b3” shown | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | ipad | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Evolved (b3) | example 2: finished (13 s incl. animation) | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: no fallback needed | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | example 2: narration feed filled | ipad | ✅ | 7 bubbles |
+| Troubleshoot · Evolved (b3) | Replay re-runs the trace and refills the answer | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | Courier drafts (no “sent” claim) | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | “Draft message to expert” opens an editable draft | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | Copy (includes edits) | ipad | ✅ |  |
+| Troubleshoot · Evolved (b3) | Download .txt | ipad | ✅ | escalation-plant-a-2026-10-11.txt |
+| Troubleshoot · Evolved (b3) | Open in email (mailto with subject + body) | ipad | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
+| Layout | /troubleshoot evolved ex2 | ipad | ✅ |  |
+| Troubleshoot · Fast | strategy toggle selected | ipad | ✅ |  |
+| Troubleshoot · Fast | example 1: “Running Fast strategy” shown | ipad | ✅ |  |
+| Troubleshoot · Fast | example 1: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | ipad | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Fast | example 1: finished (13 s incl. animation) | ipad | ✅ |  |
+| Troubleshoot · Fast | example 1: narration feed filled | ipad | ✅ | 7 bubbles |
+| Layout | /troubleshoot fast ex1 | ipad | ✅ |  |
+| Troubleshoot · Fast | strategy toggle selected | ipad | ✅ |  |
+| Troubleshoot · Fast | example 2: “Running Fast strategy” shown | ipad | ✅ |  |
+| Troubleshoot · Fast | example 2: answer fills in Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier, each tagged | ipad | ✅ | Sentinel → Librarian → Keeper → Diagnostician → Governor → Courier |
+| Troubleshoot · Fast | example 2: finished (13 s incl. animation) | ipad | ✅ |  |
+| Troubleshoot · Fast | example 2: narration feed filled | ipad | ✅ | 7 bubbles |
+| Troubleshoot · Fast | Replay re-runs the trace and refills the answer | ipad | ✅ |  |
+| Troubleshoot · Fast | Courier drafts (no “sent” claim) | ipad | ✅ |  |
+| Troubleshoot · Fast | “Draft message to expert” opens an editable draft | ipad | ✅ |  |
+| Troubleshoot · Fast | Copy (includes edits) | ipad | ✅ |  |
+| Troubleshoot · Fast | Download .txt | ipad | ✅ | escalation-plant-a-2026-10-11.txt |
+| Troubleshoot · Fast | Open in email (mailto with subject + body) | ipad | ✅ | mailto:?subject=Water Copilot escalation · plant-a · tier RED · F3 Per |
+| Layout | /troubleshoot fast ex2 | ipad | ✅ |  |
+| Troubleshoot · Governor override (fixture) | red pulse + “Governor overruled” + “Raised to RED by Governor” in the answer | ipad | ✅ |  |
+| Errors | empty submit shows a friendly hint | ipad | ✅ |  |
+| Errors | evolved error → automatic fallback to Fast, answer still arrives | ipad | ✅ |  |
+| Errors | API error (evolved and fast) → friendly message | ipad | ✅ |  |
 | Errors | Handoff: API error → friendly message | ipad | ✅ |  |
 | Errors | Save to logbook: missing fields → friendly message | ipad | ✅ |  |
 | Errors | Save to logbook: database error → friendly message | ipad | ✅ |  |

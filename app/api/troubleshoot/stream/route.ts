@@ -1,7 +1,9 @@
 import { runTroubleshoot } from "@/lib/pipeline";
+import type { LiveEvent } from "@/components/agents/live-events";
+import { strategyFor } from "@/components/evolved-strategy";
 import { withLiveLogbook } from "@/components/logbook-data";
 import { parseTroubleshootBody } from "@/lib/troubleshoot-input";
-import { diagnosticianEvent, governorEvent, keeperEvent, librarianEvent, sentinelEvent, type TraceEvent } from "@/lib/trace";
+import { diagnosticianEvent, governorEvent, keeperEvent, librarianEvent, sentinelEvent } from "@/lib/trace";
 import { readJSON } from "@/lib/validate";
 
 /**
@@ -11,16 +13,19 @@ import { readJSON } from "@/lib/validate";
  * courier (red only), then done with the full TroubleshootResponse — or error.
  */
 export async function POST(request: Request) {
+  const body = await readJSON(request);
   // The Keeper reads the live logbook (MongoDB, seed fallback) unless the request sends its own.
-  const parsed = await parseTroubleshootBody(await withLiveLogbook(await readJSON(request)));
+  const parsed = await parseTroubleshootBody(await withLiveLogbook(body));
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
   const input = parsed.input;
+  // body.strategy: "fast" (production prompt) or "evolved" (default; the selected strategy, else fast).
+  const strategy = await strategyFor(body);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let open = true;
-      const send = (e: TraceEvent) => {
+      const send = (e: LiveEvent) => {
         if (!open) return;
         try {
           controller.enqueue(encoder.encode(`event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`));
@@ -29,9 +34,10 @@ export async function POST(request: Request) {
         }
       };
       let alerts: Parameters<typeof governorEvent>[2] = [];
+      send({ type: "strategy", choice: strategy.choice, id: strategy.id });
 
       try {
-        const result = await runTroubleshoot(input, {}, {
+        const result = await runTroubleshoot(input, strategy.options, {
           onRules(a, asOf) {
             alerts = a;
             send(sentinelEvent(a, input.readings, asOf));

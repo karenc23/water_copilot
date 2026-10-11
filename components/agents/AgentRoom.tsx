@@ -5,11 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AgentOrb, type OrbState } from "@/components/agents/AgentOrb";
 import Aurora from "@/components/agents/Aurora";
 import { AGENT, AGENTS, RING_POS, TIER_GLOW, type AgentId } from "@/components/agents/meta";
-import { ResultView } from "@/components/Troubleshoot";
+import LiveAnswer from "@/components/agents/LiveAnswer";
 import type { Alert, Tier } from "@/lib/rules";
-import type { TraceEvent } from "@/lib/trace";
+import type { LiveEvent } from "@/components/agents/live-events";
 
-// "See the agents think": replays the real pipeline trace from /api/troubleshoot/stream.
+// Troubleshoot: replays the real pipeline trace from /api/troubleshoot/stream in the Agent Room while
+// the answer card (LiveAnswer) fills in from the same events.
 // Every label, chip and sentence below is built from a TraceEvent field; nothing is made up.
 // Events are shown no faster than one stage per ~1.5 s so each hand-off can be seen; the
 // Diagnostician's wait is real (it shimmers until the model's event arrives).
@@ -106,7 +107,8 @@ function Particle({ spec }: { spec: ParticleSpec }) {
   }, [t, duration, delay]);
 
   if (done) return null;
-  const w = label ? label.length * 7.6 + 26 : 0;
+  // Sized for the compact canvas (~55% of the page width), so labels stay readable.
+  const w = label ? label.length * 10.4 + 34 : 0;
   return (
     <motion.g style={{ opacity }}>
       <motion.circle cx={tx2} cy={ty2} r={3} fill={color} opacity={0.3} />
@@ -122,9 +124,9 @@ function Particle({ spec }: { spec: ParticleSpec }) {
           <circle r={glyph === "drop" ? 6 : 7} fill={color} />
         )}
         {label && (
-          <g transform={`translate(${-w / 2} -46)`}>
-            <rect width={w} height={28} rx={14} fill="#06101f" fillOpacity={0.88} stroke={color} strokeWidth={1.5} />
-            <text x={w / 2} y={19} textAnchor="middle" fontSize={14} fontWeight={600} fill="#fff" style={{ fontFamily: "var(--font-geist-sans), system-ui" }}>
+          <g transform={`translate(${-w / 2} -56)`}>
+            <rect width={w} height={36} rx={18} fill="#06101f" fillOpacity={0.9} stroke={color} strokeWidth={2} />
+            <text x={w / 2} y={25} textAnchor="middle" fontSize={19} fontWeight={600} fill="#fff" style={{ fontFamily: "var(--font-geist-sans), system-ui" }}>
               {label}
             </text>
           </g>
@@ -136,7 +138,7 @@ function Particle({ spec }: { spec: ParticleSpec }) {
 
 const P = POS;
 
-function particlesFor(e: TraceEvent, key: string): ParticleSpec[] {
+function particlesFor(e: LiveEvent, key: string): ParticleSpec[] {
   const out: ParticleSpec[] = [];
   const add = (s: Omit<ParticleSpec, "key">) => out.push({ ...s, key: `${key}-${out.length}` });
   switch (e.type) {
@@ -207,7 +209,7 @@ function Chip({ color, children }: { color: string; children: ReactNode }) {
   );
 }
 
-function narrate(e: TraceEvent): Bubble | null {
+function narrate(e: LiveEvent): Bubble | null {
   switch (e.type) {
     case "sentinel":
       return {
@@ -351,7 +353,7 @@ function narrate(e: TraceEvent): Bubble | null {
 // Pacing
 // ---------------------------------------------------------------------------
 
-function gapAfter(e: TraceEvent, all: TraceEvent[], replay: boolean, reduced: boolean): number {
+function gapAfter(e: LiveEvent, all: LiveEvent[], replay: boolean, reduced: boolean): number {
   if (reduced) return e.type === "diagnostician_start" && replay ? 600 : 400;
   switch (e.type) {
     case "sentinel":
@@ -380,11 +382,23 @@ function gapAfter(e: TraceEvent, all: TraceEvent[], replay: boolean, reduced: bo
 // Component
 // ---------------------------------------------------------------------------
 
-export default function AgentRoom() {
+export type StrategyChoice = "evolved" | "fast";
+
+const EVOLVED_TIMEOUT_MS = 30_000;
+
+type Attempt = { ok: true } | { ok: false; reason: string; httpError?: string };
+
+/**
+ * The combined Troubleshoot view: problem input on top; the Agent Room and its narration on the
+ * left; the answer card filling in live on the right (stacked on narrower screens).
+ */
+export default function AgentRoom({ evolvedId }: { evolvedId: string | null }) {
   const [description, setDescription] = useState("");
   const [asked, setAsked] = useState("");
   const [hint, setHint] = useState<string | null>(null);
-  const [events, setEvents] = useState<TraceEvent[]>([]);
+  const [strategy, setStrategy] = useState<StrategyChoice>(evolvedId ? "evolved" : "fast");
+  const [fallback, setFallback] = useState<string | null>(null);
+  const [events, setEvents] = useState<LiveEvent[]>([]);
   const [shown, setShown] = useState(0);
   const [runId, setRunId] = useState(0);
   const [replaying, setReplaying] = useState(false);
@@ -392,7 +406,6 @@ export default function AgentRoom() {
   const lastShownAt = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
-  const answerRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion() ?? false;
 
   // Reveal received events one at a time.
@@ -410,10 +423,11 @@ export default function AgentRoom() {
 
   const visible = events.slice(0, shown);
   const last = visible.at(-1);
-  const find = <T extends TraceEvent["type"]>(type: T) => visible.find((e) => e.type === type) as Extract<TraceEvent, { type: T }> | undefined;
+  const find = <T extends LiveEvent["type"]>(type: T) => visible.find((e) => e.type === type) as Extract<LiveEvent, { type: T }> | undefined;
   const done = find("done");
   const error = find("error");
   const governor = find("governor");
+  const running = events.find((e) => e.type === "strategy") as Extract<LiveEvent, { type: "strategy" }> | undefined;
   const finished = !!(done || error);
   const busy = streaming || (events.length > 0 && !finished);
 
@@ -421,46 +435,21 @@ export default function AgentRoom() {
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight, behavior: reduced ? "auto" : "smooth" });
   }, [shown, reduced]);
 
-  // Bring the answer's top into view without scrolling the canvas away entirely.
-  useEffect(() => {
-    if (!done) return;
-    const id = setTimeout(() => {
-      const top = answerRef.current?.getBoundingClientRect().top;
-      if (top !== undefined && top > window.innerHeight * 0.7) {
-        window.scrollBy({ top: top - window.innerHeight * 0.45, behavior: reduced ? "auto" : "smooth" });
-      }
-    }, 300);
-    return () => clearTimeout(id);
-  }, [done, reduced]);
-
-  const run = useCallback(async (text: string) => {
-    if (!text.trim()) {
-      setHint("Describe what’s happening first: what you see, hear or measured.");
-      return;
-    }
-    setHint(null);
-    setAsked(text);
-    abortRef.current?.abort();
-    const ac = new AbortController();
-    abortRef.current = ac;
-    setEvents([]);
-    setShown(0);
-    setReplaying(false);
-    setRunId((r) => r + 1);
-    setStreaming(true);
-    const push = (e: TraceEvent) => setEvents((prev) => [...prev, e]);
-    let ended = false;
+  /** One streamed attempt with the given strategy. Events go straight into the room as they arrive. */
+  const attempt = useCallback(async (text: string, choice: StrategyChoice, ac: AbortController): Promise<Attempt> => {
+    let timedOut = false;
+    const timer = choice === "evolved" ? setTimeout(() => ((timedOut = true), ac.abort()), EVOLVED_TIMEOUT_MS) : null;
+    const push = (e: LiveEvent) => setEvents((prev) => [...prev, e]);
     try {
       const res = await fetch("/api/troubleshoot/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: text }),
+        body: JSON.stringify({ description: text, strategy: choice }),
         signal: ac.signal,
       });
       if (!res.ok || !res.body) {
         const body = await res.json().catch(() => null);
-        push({ type: "error", error: body?.error ?? `Request failed (${res.status}).` });
-        return;
+        return { ok: false, reason: "the server returned an error", httpError: body?.error ?? `Request failed (${res.status}).` };
       }
       const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
       let buf = "";
@@ -478,18 +467,61 @@ export default function AgentRoom() {
             .join("\n");
           buf = buf.slice(i + 2);
           if (!data) continue;
-          const e = JSON.parse(data) as TraceEvent;
-          if (e.type === "done" || e.type === "error") ended = true;
+          const e = JSON.parse(data) as LiveEvent;
+          if (e.type === "error") return { ok: false, reason: "the model request failed", httpError: e.error };
           push(e);
+          if (e.type === "done") return { ok: true };
         }
       }
-      if (!ended) push({ type: "error", error: "The connection closed before the agents finished." });
+      return { ok: false, reason: "the connection closed early", httpError: "The connection closed before the agents finished." };
     } catch {
-      if (!ac.signal.aborted) push({ type: "error", error: "Could not reach the server. Check the connection and try again." });
+      if (timedOut) return { ok: false, reason: `it took longer than ${EVOLVED_TIMEOUT_MS / 1000} s` };
+      return { ok: false, reason: "the server couldn’t be reached", httpError: "Could not reach the server. Check the connection and try again." };
     } finally {
-      if (!ac.signal.aborted) setStreaming(false);
+      if (timer) clearTimeout(timer);
     }
   }, []);
+
+  const reset = () => {
+    setEvents([]);
+    setShown(0);
+    setReplaying(false);
+    setRunId((r) => r + 1);
+  };
+
+  const run = useCallback(
+    async (text: string) => {
+      if (!text.trim()) {
+        setHint("Describe what’s happening first: what you see, hear or measured.");
+        return;
+      }
+      setHint(null);
+      setAsked(text);
+      setFallback(null);
+      abortRef.current?.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
+      reset();
+      setStreaming(true);
+      try {
+        let result = await attempt(text, strategy, ac);
+        if (ac !== abortRef.current) return; // a newer question replaced this one
+        if (!result.ok && strategy === "evolved") {
+          // Automatic fallback: re-run the same question with the fast production prompt.
+          setFallback(`The evolved strategy didn’t finish (${result.reason}), so the agents re-ran it with the Fast strategy.`);
+          const ac2 = new AbortController();
+          abortRef.current = ac2;
+          reset();
+          result = await attempt(text, "fast", ac2);
+          if (ac2 !== abortRef.current) return;
+        }
+        if (!result.ok) setEvents((prev) => [...prev, { type: "error", error: result.httpError ?? `The request failed: ${result.reason}.` }]);
+      } finally {
+        setStreaming(false);
+      }
+    },
+    [attempt, strategy],
+  );
 
   function replay() {
     setReplaying(true);
@@ -498,7 +530,7 @@ export default function AgentRoom() {
   }
 
   function orbState(id: AgentId): OrbState {
-    const own: Record<AgentId, TraceEvent["type"]> = {
+    const own: Record<AgentId, LiveEvent["type"]> = {
       sentinel: "sentinel",
       librarian: "librarian",
       keeper: "keeper",
@@ -521,7 +553,7 @@ export default function AgentRoom() {
   }, [raised, runId]);
   const showBanner = raised && bannerDoneRun !== runId;
 
-  const courierCaption = find("courier") ? "Draft ready below" : done ? "Not needed: tier isn’t red" : null;
+  const courierCaption = find("courier") ? "Message drafted" : done ? "Not needed" : null;
   const bubbles = visible.map((e, i) => ({ i, b: narrate(e) })).filter((x): x is { i: number; b: Bubble } => !!x.b);
 
   const status =
@@ -536,71 +568,103 @@ export default function AgentRoom() {
             : "Describe a problem to wake the team";
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-night text-white ring-1 ring-accent/25 shadow-[0_0_60px_-20px_rgba(94,234,212,0.45)]">
-        <Aurora />
-
-        {/* Prompt */}
-        <form
-          className="relative z-10 border-b border-white/10 p-4 md:p-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(description);
-          }}
-        >
-          <label htmlFor="agent-description" className="text-sm font-semibold uppercase tracking-widest text-teal-200/90">
-            What’s happening at the plant?
-          </label>
-          <div className="mt-2 flex flex-col gap-3 md:flex-row">
-            <textarea
-              id="agent-description"
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
+    <div className="space-y-5">
+      {/* Problem input */}
+      <form
+        className="glass relative rounded-2xl p-4 md:p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          run(description);
+        }}
+      >
+        <label htmlFor="agent-description" className="text-sm font-semibold tracking-widest text-teal-200/90 uppercase">
+          What’s happening at the plant?
+        </label>
+        <div className="mt-2 flex flex-col gap-3 md:flex-row">
+          <textarea
+            id="agent-description"
+            value={description}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              setHint(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(description);
+            }}
+            aria-describedby={hint ? "agent-description-hint" : undefined}
+            rows={2}
+            placeholder="e.g. Chlorine dropped to 0.4 this morning and the feed pump sounds different"
+            className="min-h-20 flex-1 resize-y rounded-xl border border-white/20 bg-white/5 p-3 text-lg text-white placeholder:text-ink-faint focus:border-teal-300 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="min-h-14 shrink-0 rounded-xl bg-teal-300 px-6 text-lg font-bold text-[#04121f] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? "Agents working…" : "Wake the agents"}
+          </button>
+        </div>
+        {hint && (
+          <p id="agent-description-hint" role="alert" className="mt-2 text-base font-semibold text-amber-200">
+            {hint}
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setDescription(ex);
                 setHint(null);
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(description);
-              }}
-              aria-describedby={hint ? "agent-description-hint" : undefined}
-              rows={3}
-              placeholder="e.g. Chlorine dropped to 0.4 this morning and the feed pump sounds different"
-              className="min-h-24 flex-1 resize-y rounded-xl border border-white/20 bg-white/5 p-3 text-lg text-white placeholder:text-ink-faint focus:border-teal-300 focus:outline-none"
-            />
-            <button
-              type="submit"
-              disabled={busy}
-              className="min-h-14 shrink-0 rounded-xl bg-teal-300 px-6 text-lg font-bold text-[#04121f] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-left text-sm text-slate-200 hover:bg-white/10 disabled:opacity-50"
             >
-              {busy ? "Agents working…" : "Wake the agents"}
+              {ex}
             </button>
-          </div>
-          {hint && (
-            <p id="agent-description-hint" role="alert" className="mt-2 text-base font-semibold text-amber-200">
-              {hint}
-            </p>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
+          ))}
+          <div role="radiogroup" aria-label="Strategy" className="ml-auto inline-flex rounded-full border border-white/15 bg-white/5 p-0.5 text-sm">
+            {(
+              [
+                ["evolved", evolvedId ? `Evolved (${evolvedId})` : "Evolved", "The strategy picked by training score; ~5–10 s"],
+                ["fast", "Fast", "The production prompt; ~2–3 s"],
+              ] as const
+            ).map(([key, label, title]) => (
               <button
-                key={ex}
+                key={key}
                 type="button"
-                disabled={busy}
-                onClick={() => {
-                  setDescription(ex);
-                  setHint(null);
-                }}
-                className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-left text-sm text-slate-200 hover:bg-white/10 disabled:opacity-50"
+                role="radio"
+                aria-checked={strategy === key}
+                title={title}
+                disabled={busy || (key === "evolved" && !evolvedId)}
+                onClick={() => setStrategy(key)}
+                className={`min-h-9 rounded-full px-3 font-semibold transition disabled:opacity-50 ${
+                  strategy === key ? "bg-teal-300 text-[#04121f]" : "text-slate-200 hover:bg-white/10"
+                }`}
               >
-                {ex}
+                {label}
               </button>
             ))}
           </div>
-        </form>
+        </div>
+      </form>
 
-        <div className="relative z-10 grid xl:grid-cols-[minmax(0,1fr)_19rem]">
-          {/* Canvas */}
-          <div className="relative">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+        {/* Left: Agent Room + narration */}
+        <div className="relative overflow-hidden rounded-2xl bg-night text-white ring-1 ring-accent/25 shadow-[0_0_60px_-20px_rgba(94,234,212,0.45)]">
+          <Aurora />
+          <div className="relative z-10 flex min-h-9 items-center justify-between gap-3 border-b border-white/10 px-4 py-2 text-sm">
+            <span className="font-semibold tracking-widest text-teal-200/90 uppercase">Agent Room</span>
+            {running && (busy || finished) && (
+              <span role="status" className="inline-flex items-center gap-2 text-slate-200">
+                <span className={`size-2 rounded-full ${busy ? "animate-pulse" : ""}`} style={{ background: running.choice === "evolved" ? TIER_GLOW.green : "#cbd5e1" }} />
+                {busy ? "Running" : "Ran"} {running.choice === "evolved" ? `evolved strategy: ${running.id}` : "Fast strategy (production prompt)"}
+              </span>
+            )}
+          </div>
+
+          <div className="relative z-10">
             <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Six agents in a ring passing information to each other">
               {LINKS.map((l) => {
                 const lit = orbState(l.from) !== "idle" && orbState(l.to) !== "idle";
@@ -643,6 +707,7 @@ export default function AgentRoom() {
                   y={POS[a.id].y}
                   state={orbState(a.id)}
                   wakeKey={runId}
+                  compact
                   caption={a.id === "courier" ? courierCaption : null}
                 />
               ))}
@@ -658,18 +723,13 @@ export default function AgentRoom() {
                     key={`tier-${runId}`}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="rounded-2xl border-2 bg-[#06101f]/85 px-5 py-2 text-center"
+                    className="rounded-2xl border-2 bg-[#06101f]/85 px-4 py-1.5 text-center"
                     style={{ borderColor: TIER_GLOW[governor.final_tier] }}
                   >
-                    <div className="text-xs font-semibold uppercase tracking-widest text-slate-300">Final tier</div>
-                    <div className="text-2xl font-black md:text-3xl" style={{ color: TIER_GLOW[governor.final_tier] }}>
+                    <div className="text-xs font-semibold tracking-widest text-slate-300 uppercase">Final tier</div>
+                    <div className="text-2xl font-black" style={{ color: TIER_GLOW[governor.final_tier] }}>
                       {TIER_WORD[governor.final_tier]}
                     </div>
-                    {governor.raised && (
-                      <div className="text-xs font-semibold text-red-300">
-                        Raised from {TIER_WORD[governor.proposed_tier]} by the Governor
-                      </div>
-                    )}
                   </motion.div>
                 ) : status ? (
                   <motion.p
@@ -677,7 +737,7 @@ export default function AgentRoom() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
-                    className="max-w-[16rem] text-center text-sm text-slate-300 md:text-base"
+                    className="max-w-[14rem] text-center text-sm text-slate-300"
                   >
                     {status}
                   </motion.p>
@@ -704,9 +764,9 @@ export default function AgentRoom() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                    className="absolute inset-x-3 top-3 rounded-xl border border-red-300/60 bg-red-700/90 px-4 py-2.5 text-center shadow-lg shadow-red-900/50 md:inset-x-10"
+                    className="absolute inset-x-3 top-3 rounded-xl border border-red-300/60 bg-red-700/90 px-4 py-2 text-center shadow-lg shadow-red-900/50"
                   >
-                    <p className="text-base font-bold md:text-lg">
+                    <p className="text-base font-bold">
                       Governor overruled: {TIER_WORD[governor.proposed_tier]} → {TIER_WORD[governor.final_tier]}
                     </p>
                     {governor.reason && <p className="line-clamp-2 text-sm text-red-50">{governor.reason}</p>}
@@ -731,60 +791,35 @@ export default function AgentRoom() {
           </div>
 
           {/* Narration feed */}
-          <div className="relative border-t border-white/10 xl:border-t-0 xl:border-l">
-            <div ref={feedRef} className="max-h-96 space-y-3 overflow-y-auto p-4 xl:absolute xl:inset-0 xl:max-h-none" aria-live="polite">
-              {!bubbles.length && <p className="text-sm text-ink-faint">Each agent will explain what it did here, in plain words.</p>}
-              <AnimatePresence initial={false}>
-                {bubbles.map(({ i, b }) => {
-                  const a = AGENT[b.agent];
-                  return (
-                    <motion.div
-                      key={`${runId}-${i}`}
-                      initial={{ opacity: 0, x: 24 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                      className="flex gap-2.5"
-                    >
-                      <span className="mt-1 size-3 shrink-0 rounded-full" style={{ background: a.color, boxShadow: `0 0 12px ${a.color}` }} />
-                      <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-white/[0.07] px-3 py-2 text-sm leading-relaxed text-slate-100 ring-1 ring-white/10">
-                        <div className="mb-0.5 text-xs font-bold uppercase tracking-wider" style={{ color: a.color }}>
-                          {a.name}
-                        </div>
-                        {b.body}
+          <div ref={feedRef} className="relative z-10 max-h-80 space-y-3 overflow-y-auto border-t border-white/10 p-4" aria-live="polite" aria-label="What each agent did">
+            {!bubbles.length && <p className="text-sm text-ink-faint">Each agent will explain what it did here, in plain words.</p>}
+            <AnimatePresence initial={false}>
+              {bubbles.map(({ i, b }) => {
+                const a = AGENT[b.agent];
+                return (
+                  <motion.div
+                    key={`${runId}-${i}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                    className="flex gap-2.5"
+                  >
+                    <span className="mt-1 size-3 shrink-0 rounded-full" style={{ background: a.color, boxShadow: `0 0 12px ${a.color}` }} />
+                    <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-white/[0.07] px-3 py-2 text-sm leading-relaxed text-slate-100 ring-1 ring-white/10">
+                      <div className="mb-0.5 text-xs font-bold tracking-wider uppercase" style={{ color: a.color }}>
+                        {a.name}
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
+                      {b.body}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </div>
-      </div>
 
-      <div ref={answerRef} className="scroll-mt-6 space-y-6" aria-live="polite">
-        <AnimatePresence>
-          {done && (
-            <motion.div
-              key={`answer-${runId}`}
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: "spring", stiffness: 120, damping: 20 }}
-              className="space-y-6"
-            >
-              <ResultView result={done.result} description={asked} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {error && (
-          <div role="alert" className="rounded-xl border-2 border-line-strong bg-glass p-5">
-            <p className="text-xl font-bold text-ink">Couldn’t get a diagnosis</p>
-            <p className="mt-1 text-lg text-ink-soft">{error.error}</p>
-            <p className="mt-3 text-base text-ink-soft">
-              Follow the manual. If you think health could be at risk, contact your Remote Maintenance Worker now (Manual §8.1).
-            </p>
-          </div>
-        )}
+        {/* Right: the answer, filling in as each agent finishes */}
+        <LiveAnswer visible={visible} runId={runId} description={asked} busy={busy} fallback={fallback} />
       </div>
     </div>
   );

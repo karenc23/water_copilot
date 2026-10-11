@@ -19,6 +19,7 @@ export function AgentOrb({
   wakeKey,
   labels = true,
   caption,
+  compact = false,
 }: {
   agent: AgentMeta;
   x: number;
@@ -30,6 +31,8 @@ export function AgentOrb({
   labels?: boolean;
   /** Extra small line under the role, e.g. "Not needed: tier isn't red". */
   caption?: string | null;
+  /** Name only, larger: for a canvas drawn at about half the page width. */
+  compact?: boolean;
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const lit = state !== "idle";
@@ -119,14 +122,16 @@ export function AgentOrb({
 
       {labels && (
         <g textAnchor="middle" style={{ fontFamily: "var(--font-geist-sans), system-ui, sans-serif" }}>
-          <text y={r + 30} fontSize={21} fontWeight={700} fill="#ffffff" fillOpacity={lit ? 1 : 0.6}>
+          <text y={r + (compact ? 38 : 30)} fontSize={compact ? 28 : 21} fontWeight={700} fill="#ffffff" fillOpacity={lit ? 1 : 0.6}>
             {agent.name}
           </text>
-          <text y={r + 53} fontSize={16} fill="#cbd5e1" fillOpacity={lit ? 0.95 : 0.55}>
-            {agent.role}
-          </text>
+          {!compact && (
+            <text y={r + 53} fontSize={16} fill="#cbd5e1" fillOpacity={lit ? 0.95 : 0.55}>
+              {agent.role}
+            </text>
+          )}
           {caption && (
-            <text y={r + 73} fontSize={14} fill={c} fillOpacity={0.9} fontStyle="italic">
+            <text y={r + (compact ? 68 : 73)} fontSize={compact ? 21 : 14} fill={c} fillOpacity={0.95} fontStyle="italic">
               {caption}
             </text>
           )}
